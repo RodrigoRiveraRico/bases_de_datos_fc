@@ -1,6 +1,6 @@
 /*
 =================================
-Ayudantía 15: SELECT y WHERE
+Ayudantía 13: SELECT y WHERE
 Rodrigo Baruch Rivera Rico
 26 septiembre 2024
 =================================
