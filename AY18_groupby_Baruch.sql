@@ -50,6 +50,7 @@ Queremos agrupar las ciudades por país y obtener la población máxima de cada 
 SELECT CountryCode, MAX(Population) AS MaxCityPopulation
 FROM city
 GROUP BY CountryCode;
+-- Para obtener a su vez el nombre de la ciudad con la población máxima de cada país hay que hacer uso de subconsultas o JOIN. Temas que se verán más adelante.
 
 /*
 Queremos agrupar las ciudades por país y obtener la población mínima de cada país.
@@ -57,6 +58,7 @@ Queremos agrupar las ciudades por país y obtener la población mínima de cada 
 SELECT CountryCode, MIN(Population) AS MinCityPopulation
 FROM city
 GROUP BY CountryCode;
+-- Para obtener a su vez el nombre de la ciudad con la población mínima de cada país hay que hacer uso de subconsultas o JOIN. Temas que se verán más adelante.
 
 /*
 Queremos agrupar las ciudades por país 
@@ -93,10 +95,10 @@ Devuelve NULL si no hay valores no nulos.
 */
 
 /*
-Queremos listar los idiomas registrados de cada país en un formato concatenado, agrupados por país.
+Queremos listar las ciudades de cada país en un formato concatenado.
 */
-SELECT CountryCode, GROUP_CONCAT(Language) AS Languages
-FROM countrylanguage
+SELECT CountryCode, GROUP_CONCAT(Name) AS Cities
+FROM city
 GROUP BY CountryCode
 LIMIT 10;
 -- Limitamos los registros a 10 para reducir los resultados en pantalla.
@@ -106,20 +108,21 @@ Para tener una mejor visualización cuando los resultados son demasiado anchos p
 terminamos la sentencia con \G en lugar de ;
 Esto hace que los conjuntos de resultados se muestren verticalmente.
 */
-SELECT CountryCode, GROUP_CONCAT(Language) AS Languages
-FROM countrylanguage
+SELECT CountryCode, GROUP_CONCAT(Name) AS Cities
+FROM city
 GROUP BY CountryCode
 LIMIT 10 \G
 -- Limitamos los registros a 10 para reducir los resultados en pantalla.
 
 /*
 La función GROUP_CONCAT() admite las siguientes opciones:
-GROUP_CONCAT(Language ORDER BY Language ASC SEPARATOR ' <-> ')
+GROUP_CONCAT(Name ORDER BY Name ASC SEPARATOR ' <-> ')
 Al usar ORDER BY hacemos que el formato concatenado esté ordenado.
-Por default, el separador es ', ', el cual se puede cambiar al especificarlo con SEPARATOR.
+Por default, el separador es una coma (,)
+El separador se puede cambiar al especificarlo con SEPARATOR.
 */
-SELECT CountryCode, GROUP_CONCAT(Language ORDER BY Language ASC SEPARATOR ' <-> ') AS Languages
-FROM countrylanguage
+SELECT CountryCode, GROUP_CONCAT(Name ORDER BY Name ASC SEPARATOR ' <-> ') AS Cities
+FROM city
 GROUP BY CountryCode 
 LIMIT 10 \G
 -- Limitamos los registros a 10 para reducir los resultados en pantalla.
@@ -127,6 +130,7 @@ LIMIT 10 \G
 /*
 JSON_ARRAYAGG()
 Función que agrega un conjunto de resultados como un único arreglo JSON cuyos elementos consisten en las filas.
+La función actúa sobre una columna o una expresión que se evalúa a un único valor.
 */
 
 /*
@@ -153,3 +157,18 @@ FROM city
 GROUP BY CountryCode
 limit 10 \G
 -- Limitamos los registros a 10 para reducir los resultados en pantalla.
+
+/*
+WHERE vs HAVING
+La cláusula HAVING, al igual que la cláusula WHERE, especifica condiciones de selección. 
+La cláusula WHERE especifica las condiciones de las columnas de la lista de selección, 
+pero no puede hacer referencia a funciones de agregación. 
+La cláusula HAVING especifica condiciones sobre grupos, normalmente formados por la cláusula GROUP BY. 
+El resultado de la consulta sólo incluye los grupos que cumplen las condiciones de HAVING. 
+(Si no hay ninguna cláusula GROUP BY, todas las filas forman implícitamente un único grupo agregado).
+
+La clave está en que WHERE se usa para filtrar filas antes de que se realice la agregación, 
+mientras que HAVING filtra los grupos resultantes después de la agregación.
+*/
+
+
