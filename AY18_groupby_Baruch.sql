@@ -137,3 +137,19 @@ FROM city
 GROUP BY CountryCode
 LIMIT 10 \G
 -- Limitamos los registros a 10 para reducir los resultados en pantalla.
+
+/*
+JSON_OBJECTAGG()
+Función que toma dos columnas o expresiones como argumentos,
+el primero de los cuales se utiliza como llave y el segundo como valor,
+y devuelve un objeto JSON que contiene pares llave-valor.
+*/
+
+/*
+Queremos crear un objeto JSON que asocie el nombre de la ciudad con su población para cada país.
+*/
+SELECT CountryCode, JSON_OBJECTAGG(Name, Population) AS CityPopulationObject
+FROM city
+GROUP BY CountryCode
+limit 10 \G
+-- Limitamos los registros a 10 para reducir los resultados en pantalla.
