@@ -171,4 +171,89 @@ La clave está en que WHERE se usa para filtrar filas antes de que se realice la
 mientras que HAVING filtra los grupos resultantes después de la agregación.
 */
 
+/*
+Ejemplo 1 (Número de ciudades por país que tengan más de 100,000 habitantes.)
+Uso de WHERE para filtrar solo las ciudades que tiene más de 100,000 habitantes antes de agruparlas por país.
+*/
+SELECT CountryCode, COUNT(*) AS NumCities
+FROM city
+WHERE Population > 100000
+GROUP BY CountryCode;
+-- WHERE filtra las ciudades que tienen más de 100,000 habitantes antes de que los datos se agrupen por CountryCode. 
+-- Luego se cuenta cuántas ciudades quedan en cada país.
 
+/*
+Ejemplo 2 (Países y número de ciudades tales que por país hayan más de 3 ciudades.)
+Uso de HAVING para mostrar solo los países que tienen más de 3 ciudades en total.
+*/
+SELECT CountryCode, COUNT(*) AS NumCities
+FROM city
+GROUP BY CountryCode
+HAVING COUNT(*) > 3;
+-- Notemos que no hay filtro de las filas antes de la agregación.
+-- Primero se agrupan todas las ciudades por país,
+-- y luego se usa HAVING para filtrar los grupos donde el número de ciudades es mayor a 3.
+
+/*
+Ejemplo 3 (Número de ciudades por país que tengan más de 50,000 habitantes tal que por país hayan más de 5 ciudades con esta condición.)
+Uso de WHERE para filtrar las ciudades con más de 50,000 habitantes antes de agruparlas.
+Luego, HAVING filtra solo los países que tienen más de 5 ciudades con más de 50,000 habitantes.
+*/
+SELECT CountryCode, COUNT(*) AS NumCities
+FROM city
+WHERE Population > 50000
+GROUP BY CountryCode
+HAVING COUNT(*) > 5;
+-- Primero, WHERE filtra las ciudades que tienen más de 50,000 habitantes.
+-- Después de agrupar por país, HAVING filtra aquellos países que tienen más de 5 ciudades que cumplen el criterio de población.
+
+/*
+Ejemplo 4 (Países y población total donde se superen los 10 millones de habitantes considerando solo las ciudades con más de 100,000 habitantes.)
+Uso de WHERE para filtrar ciudades con una población mayor a 100,000.
+Luego, HAVING muestra solo los países donde la población total de sus ciudades filtradas supera los 10 millones.
+*/
+SELECT CountryCode, SUM(Population) AS TotalPopulation
+FROM city
+WHERE Population > 100000
+GROUP BY CountryCode
+HAVING SUM(Population) > 10000000;
+-- WHERE elimina las ciudades que tienen menos de 100,000 habitantes antes de la agregación. 
+-- Luego, HAVING filtra solo los países cuya población total (después del filtro inicial) supera los 10 millones.
+
+/*
+Ejemplo 5 (Países con promedio mayor a 200,000 habitantes.)
+Uso de HAVING para mostrar solo aquellos países donde el promedio de la población de las ciudades
+es mayor a 200,000, (sin filtrar previamente las ciudades).
+*/
+SELECT CountryCode, AVG(Population) AS AvgCityPopulation
+FROM city
+GROUP BY CountryCode
+HAVING AVG(Population) > 200000;
+-- Notemos que no se utiliza WHERE.
+-- Primero se calcula el promedio de población por país.
+-- Luego, HAVING se aplica para mostrar solo los países donde el promedio es mayor a 200,000.
+
+/*
+CONCLUSIONES:
+> WHERE: Se aplica antes de la agregación, afectando qué filas se incluyen en el cálculo de las funciones de agregación.
+> HAVING: Se aplica después de la agregación, filtrando los resultados basados en las agregaciones ya calculadas.
+*/
+
+/*
+NOTA:
+LENGTH() regresa la longitud de una cadena en bytes.
+CHAR_LENGTH() regresa la longitud de una cadena.
+
+Observa el resultado siguiente:
+SELECT LENGTH('México'), CHAR_LENGTH('México');
+*/
+
+/*
+Ejemplo extra:
+Agrupación de ciudades tal que CountryCode inicia con M y el total de ciudades es mayor a 10; mostrando el nombre y la longitud del nombre.
+*/
+SELECT CountryCode, GROUP_CONCAT(CONCAT(Name, ' (', CHAR_LENGTH(Name), ')') SEPARATOR ', ') AS CitiesWithLength
+FROM city
+WHERE CountryCode LIKE 'M%'
+GROUP BY CountryCode
+HAVING COUNT(*) > 10 \G
