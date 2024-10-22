@@ -34,7 +34,6 @@ para agrupar el conjunto de resultados por una o más columnas.
 /*
 Metadata:
 -> La tabla `city` tiene registros de ciudades con una llave foránea `CountryCode` que indica el país al que pertenecen.
--> La tabla `countrylanguage` tiene registros de los idiomas hablados en diferentes países con una llave foránea `CountryCode` que indica el país en cuestión.
 */
 
 /*
@@ -61,8 +60,7 @@ GROUP BY CountryCode;
 -- Para obtener a su vez el nombre de la ciudad con la población mínima de cada país hay que hacer uso de subconsultas o JOIN. Temas que se verán más adelante.
 
 /*
-Queremos agrupar las ciudades por país 
-y obtener la suma las poblaciones de todas las ciudades para obtener la población total de cada país.
+Queremos agrupar las ciudades por país y obtener la suma las poblaciones de todas las ciudades para obtener la población total de cada país.
 */
 SELECT CountryCode, SUM(Population) AS TotalCityPopulation
 FROM city
@@ -183,7 +181,7 @@ GROUP BY CountryCode;
 -- Luego se cuenta cuántas ciudades quedan en cada país.
 
 /*
-Ejemplo 2 (Países y número de ciudades tales que por país hayan más de 3 ciudades.)
+Ejemplo 2 (Países y número de ciudades tales que por país haya más de 3 ciudades.)
 Uso de HAVING para mostrar solo los países que tienen más de 3 ciudades en total.
 */
 SELECT CountryCode, COUNT(*) AS NumCities
@@ -208,7 +206,7 @@ HAVING COUNT(*) > 5;
 -- Después de agrupar por país, HAVING filtra aquellos países que tienen más de 5 ciudades que cumplen el criterio de población.
 
 /*
-Ejemplo 4 (Países y población total donde se superen los 10 millones de habitantes considerando solo las ciudades con más de 100,000 habitantes.)
+Ejemplo 4 (Países donde se superen los 10 millones de habitantes considerando solo las ciudades con más de 100,000 habitantes.)
 Uso de WHERE para filtrar ciudades con una población mayor a 100,000.
 Luego, HAVING muestra solo los países donde la población total de sus ciudades filtradas supera los 10 millones.
 */
@@ -250,7 +248,7 @@ SELECT LENGTH('México'), CHAR_LENGTH('México');
 
 /*
 Ejemplo extra:
-Agrupación de ciudades tal que CountryCode inicia con M y el total de ciudades es mayor a 10; mostrando el nombre y la longitud del nombre.
+Agrupación de ciudades tal que CountryCode inicia con M y el total de ciudades es mayor a 10; mostrando el nombre y la longitud del nombre entre paréntesis.
 */
 SELECT CountryCode, GROUP_CONCAT(CONCAT(Name, ' (', CHAR_LENGTH(Name), ')') SEPARATOR ', ') AS CitiesWithLength
 FROM city
