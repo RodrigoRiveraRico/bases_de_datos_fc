@@ -1,0 +1,2389 @@
+(world) mysql> /*
+   /*> =================================
+   /*> Ayudantía 18: Group By
+   /*> Rodrigo Baruch Rivera Rico
+   /*> 22 octubre 2024
+   /*> =================================
+   /*> */
+(world) mysql> 
+(world) mysql> -- Antes de empezar: cargar la base world y ponerla en uso
+(world) mysql> -- \. path\to\script\base_world.sql
+(world) mysql> -- \u world
+(world) mysql> 
+(world) mysql> /*
+   /*> Si durante la ejecución de las consultas SQL aparece el siguiente error:
+   /*> 
+   /*> Expression #1 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'db.table.col' 
+   /*> which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+   /*> 
+   /*> Hay que correr el siguiente comando para deshabilitar la función ONLY_FULL_GROUP_BY:
+   /*> 
+   /*> SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
+   /*> 
+   /*> Finalmente hay que reiniciar la consola (cerrar y volver a abrir).
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Recordemos que la sentencia GROUP BY agrupa las filas que tienen los mismos valores en filas resumen.
+   /*> 
+   /*> La sentencia GROUP BY se utiliza a menudo con funciones de agregación 
+   /*> (COUNT(), MAX(), MIN(), SUM(), AVG()) 
+   /*> para agrupar el conjunto de resultados por una o más columnas.
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Metadata:
+   /*> -> La tabla `city` tiene registros de ciudades con una llave foránea `CountryCode` que indica el país al que pertenecen.
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos agrupar las ciudades por país y contar cuántas ciudades tiene cada uno.
+   /*> */
+(world) mysql> SELECT CountryCode, COUNT(*) AS NumCities
+    -> FROM city
+    -> GROUP BY CountryCode;
++-------------+-----------+
+| CountryCode | NumCities |
++-------------+-----------+
+| ABW         |         1 |
+| AFG         |         4 |
+| AGO         |         5 |
+| AIA         |         2 |
+| ALB         |         1 |
+| AND         |         1 |
+| ANT         |         1 |
+| ARE         |         5 |
+| ARG         |        57 |
+| ARM         |         3 |
+| ASM         |         2 |
+| ATG         |         1 |
+| AUS         |        14 |
+| AUT         |         6 |
+| AZE         |         4 |
+| BDI         |         1 |
+| BEL         |         9 |
+| BEN         |         4 |
+| BFA         |         3 |
+| BGD         |        24 |
+| BGR         |        10 |
+| BHR         |         1 |
+| BHS         |         1 |
+| BIH         |         3 |
+| BLR         |        16 |
+| BLZ         |         2 |
+| BMU         |         2 |
+| BOL         |         8 |
+| BRA         |       250 |
+| BRB         |         1 |
+| BRN         |         1 |
+| BTN         |         1 |
+| BWA         |         2 |
+| CAF         |         1 |
+| CAN         |        49 |
+| CCK         |         2 |
+| CHE         |         5 |
+| CHL         |        29 |
+| CHN         |       363 |
+| CIV         |         5 |
+| CMR         |         7 |
+| COD         |        18 |
+| COG         |         2 |
+| COK         |         1 |
+| COL         |        38 |
+| COM         |         1 |
+| CPV         |         1 |
+| CRI         |         1 |
+| CUB         |        14 |
+| CXR         |         1 |
+| CYM         |         1 |
+| CYP         |         2 |
+| CZE         |        10 |
+| DEU         |        93 |
+| DJI         |         1 |
+| DMA         |         1 |
+| DNK         |         5 |
+| DOM         |         6 |
+| DZA         |        18 |
+| ECU         |        15 |
+| EGY         |        37 |
+| ERI         |         1 |
+| ESH         |         1 |
+| ESP         |        59 |
+| EST         |         2 |
+| ETH         |         7 |
+| FIN         |         7 |
+| FJI         |         1 |
+| FLK         |         1 |
+| FRA         |        40 |
+| FRO         |         1 |
+| FSM         |         2 |
+| GAB         |         1 |
+| GBR         |        81 |
+| GEO         |         5 |
+| GHA         |         5 |
+| GIB         |         1 |
+| GIN         |         1 |
+| GLP         |         2 |
+| GMB         |         2 |
+| GNB         |         1 |
+| GNQ         |         1 |
+| GRC         |         8 |
+| GRD         |         1 |
+| GRL         |         1 |
+| GTM         |         4 |
+| GUF         |         1 |
+| GUM         |         2 |
+| GUY         |         1 |
+| HKG         |         2 |
+| HND         |         3 |
+| HRV         |         4 |
+| HTI         |         4 |
+| HUN         |         9 |
+| IDN         |        85 |
+| IND         |       341 |
+| IRL         |         2 |
+| IRN         |        67 |
+| IRQ         |        15 |
+| ISL         |         1 |
+| ISR         |        14 |
+| ITA         |        58 |
+| JAM         |         3 |
+| JOR         |         5 |
+| JPN         |       248 |
+| KAZ         |        21 |
+| KEN         |         8 |
+| KGZ         |         2 |
+| KHM         |         3 |
+| KIR         |         2 |
+| KNA         |         1 |
+| KOR         |        70 |
+| KWT         |         3 |
+| LAO         |         2 |
+| LBN         |         2 |
+| LBR         |         1 |
+| LBY         |         4 |
+| LCA         |         1 |
+| LIE         |         2 |
+| LKA         |         7 |
+| LSO         |         1 |
+| LTU         |         5 |
+| LUX         |         1 |
+| LVA         |         3 |
+| MAC         |         1 |
+| MAR         |        22 |
+| MCO         |         2 |
+| MDA         |         4 |
+| MDG         |         5 |
+| MDV         |         1 |
+| MEX         |       173 |
+| MHL         |         1 |
+| MKD         |         1 |
+| MLI         |         1 |
+| MLT         |         2 |
+| MMR         |        16 |
+| MNG         |         1 |
+| MNP         |         1 |
+| MOZ         |        12 |
+| MRT         |         2 |
+| MSR         |         1 |
+| MTQ         |         1 |
+| MUS         |         3 |
+| MWI         |         2 |
+| MYS         |        18 |
+| MYT         |         1 |
+| NAM         |         1 |
+| NCL         |         1 |
+| NER         |         3 |
+| NFK         |         1 |
+| NGA         |        64 |
+| NIC         |         4 |
+| NIU         |         1 |
+| NLD         |        28 |
+| NOR         |         5 |
+| NPL         |         5 |
+| NRU         |         2 |
+| NZL         |         9 |
+| OMN         |         5 |
+| PAK         |        59 |
+| PAN         |         2 |
+| PCN         |         1 |
+| PER         |        22 |
+| PHL         |       136 |
+| PLW         |         1 |
+| PNG         |         1 |
+| POL         |        44 |
+| PRI         |         9 |
+| PRK         |        13 |
+| PRT         |         5 |
+| PRY         |         5 |
+| PSE         |         6 |
+| PYF         |         2 |
+| QAT         |         1 |
+| REU         |         1 |
+| ROM         |        29 |
+| RUS         |       189 |
+| RWA         |         1 |
+| SAU         |        24 |
+| SDN         |        12 |
+| SEN         |         9 |
+| SGP         |         1 |
+| SHN         |         1 |
+| SJM         |         1 |
+| SLB         |         1 |
+| SLE         |         1 |
+| SLV         |         7 |
+| SMR         |         2 |
+| SOM         |         3 |
+| SPM         |         1 |
+| STP         |         1 |
+| SUR         |         1 |
+| SVK         |         3 |
+| SVN         |         2 |
+| SWE         |        15 |
+| SWZ         |         1 |
+| SYC         |         1 |
+| SYR         |        11 |
+| TCA         |         1 |
+| TCD         |         2 |
+| TGO         |         1 |
+| THA         |        12 |
+| TJK         |         2 |
+| TKL         |         1 |
+| TKM         |         4 |
+| TMP         |         1 |
+| TON         |         1 |
+| TTO         |         2 |
+| TUN         |         8 |
+| TUR         |        62 |
+| TUV         |         1 |
+| TWN         |        42 |
+| TZA         |        10 |
+| UGA         |         1 |
+| UKR         |        57 |
+| URY         |         1 |
+| USA         |       274 |
+| UZB         |        17 |
+| VAT         |         1 |
+| VCT         |         1 |
+| VEN         |        41 |
+| VGB         |         1 |
+| VIR         |         1 |
+| VNM         |        22 |
+| VUT         |         1 |
+| WLF         |         1 |
+| WSM         |         1 |
+| YEM         |         6 |
+| YUG         |         8 |
+| ZAF         |        44 |
+| ZMB         |         7 |
+| ZWE         |         6 |
++-------------+-----------+
+232 rows in set (0.00 sec)
+
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos agrupar las ciudades por país y obtener la población máxima de cada país.
+   /*> */
+(world) mysql> SELECT CountryCode, MAX(Population) AS MaxCityPopulation
+    -> FROM city
+    -> GROUP BY CountryCode;
++-------------+-------------------+
+| CountryCode | MaxCityPopulation |
++-------------+-------------------+
+| ABW         |             29034 |
+| AFG         |           1780000 |
+| AGO         |           2022000 |
+| AIA         |               961 |
+| ALB         |            270000 |
+| AND         |             21189 |
+| ANT         |              2345 |
+| ARE         |            669181 |
+| ARG         |           2982146 |
+| ARM         |           1248700 |
+| ASM         |              5200 |
+| ATG         |             24000 |
+| AUS         |           3276207 |
+| AUT         |           1608144 |
+| AZE         |           1787800 |
+| BDI         |            300000 |
+| BEL         |            446525 |
+| BEN         |            536827 |
+| BFA         |            824000 |
+| BGD         |           3612850 |
+| BGR         |           1122302 |
+| BHR         |            148000 |
+| BHS         |            172000 |
+| BIH         |            360000 |
+| BLR         |           1674000 |
+| BLZ         |             55810 |
+| BMU         |              1800 |
+| BOL         |            935361 |
+| BRA         |           9968485 |
+| BRB         |              6070 |
+| BRN         |             21484 |
+| BTN         |             22000 |
+| BWA         |            213017 |
+| CAF         |            524000 |
+| CAN         |           1016376 |
+| CCK         |               503 |
+| CHE         |            336800 |
+| CHL         |           4703954 |
+| CHN         |           9696300 |
+| CIV         |           2500000 |
+| CMR         |           1448300 |
+| COD         |           5064000 |
+| COG         |            950000 |
+| COK         |             11900 |
+| COL         |           6260862 |
+| COM         |             36000 |
+| CPV         |             94800 |
+| CRI         |            339131 |
+| CUB         |           2256000 |
+| CXR         |               700 |
+| CYM         |             19600 |
+| CYP         |            195000 |
+| CZE         |           1181126 |
+| DEU         |           3386667 |
+| DJI         |            383000 |
+| DMA         |             16243 |
+| DNK         |            495699 |
+| DOM         |           1609966 |
+| DZA         |           2168000 |
+| ECU         |           2070040 |
+| EGY         |           6789479 |
+| ERI         |            431000 |
+| ESH         |            169000 |
+| ESP         |           2879052 |
+| EST         |            403981 |
+| ETH         |           2495000 |
+| FIN         |            555474 |
+| FJI         |             77366 |
+| FLK         |              1636 |
+| FRA         |           2125246 |
+| FRO         |             14542 |
+| FSM         |             22000 |
+| GAB         |            419000 |
+| GBR         |           7285000 |
+| GEO         |           1235200 |
+| GHA         |           1070000 |
+| GIB         |             27025 |
+| GIN         |           1090610 |
+| GLP         |             62947 |
+| GMB         |            102600 |
+| GNB         |            241000 |
+| GNQ         |             40000 |
+| GRC         |            772072 |
+| GRD         |              4621 |
+| GRL         |             13445 |
+| GTM         |            823301 |
+| GUF         |             50699 |
+| GUM         |              9500 |
+| GUY         |            254000 |
+| HKG         |           1987996 |
+| HND         |            813900 |
+| HRV         |            706770 |
+| HTI         |            884472 |
+| HUN         |           1811552 |
+| IDN         |           9604900 |
+| IND         |          10500000 |
+| IRL         |            481854 |
+| IRN         |           6758845 |
+| IRQ         |           4336000 |
+| ISL         |            109184 |
+| ISR         |            633700 |
+| ITA         |           2643581 |
+| JAM         |            110379 |
+| JOR         |           1000000 |
+| JPN         |           7980230 |
+| KAZ         |           1129400 |
+| KEN         |           2290000 |
+| KGZ         |            589400 |
+| KHM         |            570155 |
+| KIR         |              5055 |
+| KNA         |             11600 |
+| KOR         |           9981619 |
+| KWT         |            130215 |
+| LAO         |            531800 |
+| LBN         |           1100000 |
+| LBR         |            850000 |
+| LBY         |           1682000 |
+| LCA         |              2301 |
+| LIE         |              5346 |
+| LKA         |            645000 |
+| LSO         |            297000 |
+| LTU         |            577969 |
+| LUX         |             80700 |
+| LVA         |            764328 |
+| MAC         |            437500 |
+| MAR         |           2940623 |
+| MCO         |             13154 |
+| MDA         |            719900 |
+| MDG         |            675669 |
+| MDV         |             71000 |
+| MEX         |           8591309 |
+| MHL         |             28000 |
+| MKD         |            444299 |
+| MLI         |            809552 |
+| MLT         |             21445 |
+| MMR         |           3361700 |
+| MNG         |            773700 |
+| MNP         |              9200 |
+| MOZ         |           1018938 |
+| MRT         |            667300 |
+| MSR         |              2000 |
+| MTQ         |             94050 |
+| MUS         |            138200 |
+| MWI         |            478155 |
+| MYS         |           1297526 |
+| MYT         |             12000 |
+| NAM         |            169000 |
+| NCL         |             76293 |
+| NER         |            420000 |
+| NFK         |               800 |
+| NGA         |           1518000 |
+| NIC         |            959000 |
+| NIU         |               682 |
+| NLD         |            731200 |
+| NOR         |            508726 |
+| NPL         |            591835 |
+| NRU         |              4050 |
+| NZL         |            381800 |
+| OMN         |            155000 |
+| PAK         |           9269265 |
+| PAN         |            471373 |
+| PCN         |                42 |
+| PER         |           6464693 |
+| PHL         |           2173831 |
+| PLW         |             12000 |
+| PNG         |            247000 |
+| POL         |           1615369 |
+| PRI         |            434374 |
+| PRK         |           2484000 |
+| PRT         |            563210 |
+| PRY         |            557776 |
+| PSE         |            353632 |
+| PYF         |             25888 |
+| QAT         |            355000 |
+| REU         |            131480 |
+| ROM         |           2016131 |
+| RUS         |           8389200 |
+| RWA         |            286000 |
+| SAU         |           3324000 |
+| SDN         |           1271403 |
+| SEN         |            855287 |
+| SGP         |           4017733 |
+| SHN         |              1500 |
+| SJM         |              1438 |
+| SLB         |             50100 |
+| SLE         |            850000 |
+| SLV         |            415346 |
+| SMR         |              4802 |
+| SOM         |            997000 |
+| SPM         |              5808 |
+| STP         |             49541 |
+| SUR         |            112000 |
+| SVK         |            448292 |
+| SVN         |            270986 |
+| SWE         |            750348 |
+| SWZ         |             61000 |
+| SYC         |             41000 |
+| SYR         |           1347000 |
+| TCA         |              4800 |
+| TCD         |            530965 |
+| TGO         |            375000 |
+| THA         |           6320174 |
+| TJK         |            524000 |
+| TKL         |               300 |
+| TKM         |            540600 |
+| TMP         |             47900 |
+| TON         |             22400 |
+| TTO         |             56601 |
+| TUN         |            690600 |
+| TUR         |           8787958 |
+| TUV         |              4600 |
+| TWN         |           2641312 |
+| TZA         |           1747000 |
+| UGA         |            890800 |
+| UKR         |           2624000 |
+| URY         |           1236000 |
+| USA         |           8008278 |
+| UZB         |           2117500 |
+| VAT         |               455 |
+| VCT         |             17100 |
+| VEN         |           1975294 |
+| VGB         |              8000 |
+| VIR         |             13000 |
+| VNM         |           3980000 |
+| VUT         |             33700 |
+| WLF         |              1137 |
+| WSM         |             35900 |
+| YEM         |            503600 |
+| YUG         |           1204000 |
+| ZAF         |           2352121 |
+| ZMB         |           1317000 |
+| ZWE         |           1410000 |
++-------------+-------------------+
+232 rows in set (0.01 sec)
+
+(world) mysql> -- Para obtener a su vez el nombre de la ciudad con la población máxima de cada país hay que hacer uso de subconsultas o JOIN. Temas que se verán más adelante.
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos agrupar las ciudades por país y obtener la población mínima de cada país.
+   /*> */
+(world) mysql> SELECT CountryCode, MIN(Population) AS MinCityPopulation
+    -> FROM city
+    -> GROUP BY CountryCode;
++-------------+-------------------+
+| CountryCode | MinCityPopulation |
++-------------+-------------------+
+| ABW         |             29034 |
+| AFG         |            127800 |
+| AGO         |            118200 |
+| AIA         |               595 |
+| ALB         |            270000 |
+| AND         |             21189 |
+| ANT         |              2345 |
+| ARE         |            114395 |
+| ARG         |             91101 |
+| ARM         |            172700 |
+| ASM         |              2323 |
+| ATG         |             24000 |
+| AUS         |             92273 |
+| AUT         |             91141 |
+| AZE         |             93900 |
+| BDI         |            300000 |
+| BEL         |             90935 |
+| BEN         |            103577 |
+| BFA         |            105000 |
+| BGD         |             96717 |
+| BGR         |             94686 |
+| BHR         |            148000 |
+| BHS         |            172000 |
+| BIH         |             96027 |
+| BLR         |             97000 |
+| BLZ         |              7105 |
+| BMU         |              1200 |
+| BOL         |            125255 |
+| BRA         |             89200 |
+| BRB         |              6070 |
+| BRN         |             21484 |
+| BTN         |             22000 |
+| BWA         |            101805 |
+| CAF         |            524000 |
+| CAN         |             89269 |
+| CCK         |               167 |
+| CHE         |            114500 |
+| CHL         |             91056 |
+| CHN         |             89288 |
+| CIV         |            109445 |
+| CMR         |            112454 |
+| COD         |            101309 |
+| COG         |            500000 |
+| COK         |             11900 |
+| COL         |             90688 |
+| COM         |             36000 |
+| CPV         |             94800 |
+| CRI         |            339131 |
+| CUB         |             98505 |
+| CXR         |               700 |
+| CYM         |             19600 |
+| CYP         |            154400 |
+| CZE         |             91309 |
+| DEU         |             89667 |
+| DJI         |            383000 |
+| DMA         |             16243 |
+| DNK         |             90327 |
+| DOM         |             89423 |
+| DZA         |             89415 |
+| ECU         |            123045 |
+| EGY         |             91300 |
+| ERI         |            431000 |
+| ESH         |            169000 |
+| ESP         |             92262 |
+| EST         |            101246 |
+| ETH         |             96140 |
+| FIN         |             96921 |
+| FJI         |             77366 |
+| FLK         |              1636 |
+| FRA         |             90674 |
+| FRO         |             14542 |
+| FSM         |              8600 |
+| GAB         |            419000 |
+| GBR         |             23487 |
+| GEO         |            111700 |
+| GHA         |            103653 |
+| GIB         |             27025 |
+| GIN         |           1090610 |
+| GLP         |             12433 |
+| GMB         |             42326 |
+| GNB         |            241000 |
+| GNQ         |             40000 |
+| GRC         |            113090 |
+| GRD         |              4621 |
+| GRL         |             13445 |
+| GTM         |             90801 |
+| GUF         |             50699 |
+| GUM         |              1139 |
+| GUY         |            254000 |
+| HKG         |           1312637 |
+| HND         |             89200 |
+| HRV         |            104761 |
+| HTI         |            102233 |
+| HUN         |            105119 |
+| IDN         |             89900 |
+| IND         |             89053 |
+| IRL         |            127187 |
+| IRN         |             89800 |
+| IRQ         |            114516 |
+| ISL         |            109184 |
+| ISR         |             90300 |
+| ITA         |             88987 |
+| JAM         |             99799 |
+| JOR         |             89104 |
+| JPN         |             91170 |
+| KAZ         |             90000 |
+| KEN         |             91258 |
+| KGZ         |            222700 |
+| KHM         |            105100 |
+| KIR         |              2226 |
+| KNA         |             11600 |
+| KOR         |             92239 |
+| KWT         |             28859 |
+| LAO         |             96652 |
+| LBN         |            240000 |
+| LBR         |            850000 |
+| LBY         |             89338 |
+| LCA         |              2301 |
+| LIE         |              5043 |
+| LKA         |            100000 |
+| LSO         |            297000 |
+| LTU         |            133695 |
+| LUX         |             80700 |
+| LVA         |             89439 |
+| MAC         |            437500 |
+| MAR         |             90400 |
+| MCO         |              1234 |
+| MDA         |            125700 |
+| MDG         |             99005 |
+| MDV         |             71000 |
+| MEX         |             89143 |
+| MHL         |             28000 |
+| MKD         |            444299 |
+| MLI         |            809552 |
+| MLT         |              7073 |
+| MMR         |             94800 |
+| MNG         |            773700 |
+| MNP         |              9200 |
+| MOZ         |             93985 |
+| MRT         |             97600 |
+| MSR         |              2000 |
+| MTQ         |             94050 |
+| MUS         |             98464 |
+| MWI         |            435964 |
+| MYS         |            102019 |
+| MYT         |             12000 |
+| NAM         |            169000 |
+| NCL         |             76293 |
+| NER         |            112965 |
+| NFK         |               800 |
+| NGA         |            101000 |
+| NIC         |             88971 |
+| NIU         |               682 |
+| NLD         |             92713 |
+| NOR         |            101340 |
+| NPL         |             90639 |
+| NRU         |               559 |
+| NZL         |             98100 |
+| OMN         |             51969 |
+| PAK         |             89400 |
+| PAN         |            315382 |
+| PCN         |                42 |
+| PER         |             90642 |
+| PHL         |             90603 |
+| PLW         |             12000 |
+| PNG         |            247000 |
+| POL         |             93901 |
+| PRI         |             94085 |
+| PRK         |            171500 |
+| PRT         |             90535 |
+| PRY         |             95287 |
+| PSE         |             92020 |
+| PYF         |             25553 |
+| QAT         |            355000 |
+| REU         |            131480 |
+| ROM         |             93976 |
+| RUS         |             89800 |
+| RWA         |            286000 |
+| SAU         |             91000 |
+| SDN         |            114980 |
+| SEN         |             99400 |
+| SGP         |           4017733 |
+| SHN         |              1500 |
+| SJM         |              1438 |
+| SLB         |             50100 |
+| SLE         |            850000 |
+| SLV         |             88800 |
+| SMR         |              2294 |
+| SOM         |             90000 |
+| SPM         |              5808 |
+| STP         |             49541 |
+| SUR         |            112000 |
+| SVK         |             93977 |
+| SVN         |            115532 |
+| SWE         |             90742 |
+| SWZ         |             61000 |
+| SYC         |             41000 |
+| SYR         |             91081 |
+| TCA         |              4800 |
+| TCD         |             99500 |
+| TGO         |            375000 |
+| THA         |             94100 |
+| TJK         |            161500 |
+| TKL         |               300 |
+| TKM         |            101000 |
+| TMP         |             47900 |
+| TON         |             22400 |
+| TTO         |             43396 |
+| TUN         |            106600 |
+| TUR         |             90200 |
+| TUV         |              4600 |
+| TWN         |             90000 |
+| TZA         |             92800 |
+| UGA         |            890800 |
+| UKR         |             89000 |
+| URY         |           1236000 |
+| USA         |             89063 |
+| UZB         |            109500 |
+| VAT         |               455 |
+| VCT         |             17100 |
+| VEN         |             90000 |
+| VGB         |              8000 |
+| VIR         |             13000 |
+| VNM         |             97044 |
+| VUT         |             33700 |
+| WLF         |              1137 |
+| WSM         |             35900 |
+| YEM         |            103300 |
+| YUG         |             92303 |
+| ZAF         |             89292 |
+| ZMB         |            118100 |
+| ZWE         |            128037 |
++-------------+-------------------+
+232 rows in set (0.00 sec)
+
+(world) mysql> -- Para obtener a su vez el nombre de la ciudad con la población mínima de cada país hay que hacer uso de subconsultas o JOIN. Temas que se verán más adelante.
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos agrupar las ciudades por país y obtener la suma las poblaciones de todas las ciudades para obtener la población total de cada país.
+   /*> */
+(world) mysql> SELECT CountryCode, SUM(Population) AS TotalCityPopulation
+    -> FROM city
+    -> GROUP BY CountryCode;
++-------------+---------------------+
+| CountryCode | TotalCityPopulation |
++-------------+---------------------+
+| ABW         |               29034 |
+| AFG         |             2332100 |
+| AGO         |             2561600 |
+| AIA         |                1556 |
+| ALB         |              270000 |
+| AND         |               21189 |
+| ANT         |                2345 |
+| ARE         |             1728336 |
+| ARG         |            19996563 |
+| ARM         |             1633100 |
+| ASM         |                7523 |
+| ATG         |               24000 |
+| AUS         |            11313666 |
+| AUT         |             2384273 |
+| AZE         |             2464000 |
+| BDI         |              300000 |
+| BEL         |             1609322 |
+| BEN         |              968503 |
+| BFA         |             1229000 |
+| BGD         |             8569906 |
+| BGR         |             2696915 |
+| BHR         |              148000 |
+| BHS         |              172000 |
+| BIH         |              599106 |
+| BLR         |             4741000 |
+| BLZ         |               62915 |
+| BMU         |                3000 |
+| BOL         |             3378644 |
+| BRA         |            85876862 |
+| BRB         |                6070 |
+| BRN         |               21484 |
+| BTN         |               22000 |
+| BWA         |              314822 |
+| CAF         |              524000 |
+| CAN         |            12673840 |
+| CCK         |                 670 |
+| CHE         |              914200 |
+| CHL         |             9717970 |
+| CHN         |           175953614 |
+| CIV         |             3191137 |
+| CMR         |             3522554 |
+| COD         |             9864615 |
+| COG         |             1450000 |
+| COK         |               11900 |
+| COL         |            20250990 |
+| COM         |               36000 |
+| CPV         |               94800 |
+| CRI         |              339131 |
+| CUB         |             4629925 |
+| CXR         |                 700 |
+| CYM         |               19600 |
+| CYP         |              349400 |
+| CZE         |             2634711 |
+| DEU         |            26245483 |
+| DJI         |              383000 |
+| DMA         |               16243 |
+| DNK         |             1215945 |
+| DOM         |             2438276 |
+| DZA         |             5192179 |
+| ECU         |             5744142 |
+| EGY         |            20083079 |
+| ERI         |              431000 |
+| ESH         |              169000 |
+| ESP         |            16669189 |
+| EST         |              505227 |
+| ETH         |             3190334 |
+| FIN         |             1532919 |
+| FJI         |               77366 |
+| FLK         |                1636 |
+| FRA         |             9244494 |
+| FRO         |               14542 |
+| FSM         |               30600 |
+| GAB         |              419000 |
+| GBR         |            22436673 |
+| GEO         |             1880900 |
+| GHA         |             1819889 |
+| GIB         |               27025 |
+| GIN         |             1090610 |
+| GLP         |               75380 |
+| GMB         |              144926 |
+| GNB         |              241000 |
+| GNQ         |               40000 |
+| GRC         |             1972843 |
+| GRD         |                4621 |
+| GRL         |               13445 |
+| GTM         |             1225188 |
+| GUF         |               50699 |
+| GUM         |               10639 |
+| GUY         |              254000 |
+| HKG         |             3300633 |
+| HND         |             1287000 |
+| HRV         |             1168883 |
+| HTI         |             1517338 |
+| HUN         |             2953310 |
+| IDN         |            37485695 |
+| IND         |           123298526 |
+| IRL         |              609041 |
+| IRN         |            26032990 |
+| IRQ         |             8926041 |
+| ISL         |              109184 |
+| ISR         |             2813000 |
+| ITA         |            15087019 |
+| JAM         |              314140 |
+| JOR         |             1847677 |
+| JPN         |            77965107 |
+| KAZ         |             5484200 |
+| KEN         |             3522793 |
+| KGZ         |              812100 |
+| KHM         |              805055 |
+| KIR         |                7281 |
+| KNA         |               11600 |
+| KOR         |            38999893 |
+| KWT         |              261252 |
+| LAO         |              628452 |
+| LBN         |             1340000 |
+| LBR         |              850000 |
+| LBY         |             2697007 |
+| LCA         |                2301 |
+| LIE         |               10389 |
+| LKA         |             1545000 |
+| LSO         |              297000 |
+| LTU         |             1473317 |
+| LUX         |               80700 |
+| LVA         |              968596 |
+| MAC         |              437500 |
+| MAR         |             8757562 |
+| MCO         |               14388 |
+| MDA         |             1193300 |
+| MDG         |             1123161 |
+| MDV         |               71000 |
+| MEX         |            59752521 |
+| MHL         |               28000 |
+| MKD         |              444299 |
+| MLI         |              809552 |
+| MLT         |               28518 |
+| MMR         |             6203000 |
+| MNG         |              773700 |
+| MNP         |                9200 |
+| MOZ         |             3143145 |
+| MRT         |              764900 |
+| MSR         |                2000 |
+| MTQ         |               94050 |
+| MUS         |              337280 |
+| MWI         |              914119 |
+| MYS         |             4605141 |
+| MYT         |               12000 |
+| NAM         |              169000 |
+| NCL         |               76293 |
+| NER         |              653857 |
+| NFK         |                 800 |
+| NGA         |            17366900 |
+| NIC         |             1269223 |
+| NIU         |                 682 |
+| NLD         |             5180049 |
+| NOR         |             1100028 |
+| NPL         |             1132403 |
+| NRU         |                4609 |
+| NZL         |             1847600 |
+| OMN         |              537096 |
+| PAK         |            31546745 |
+| PAN         |              786755 |
+| PCN         |                  42 |
+| PER         |            12147242 |
+| PHL         |            30934791 |
+| PLW         |               12000 |
+| PNG         |              247000 |
+| POL         |            11687431 |
+| PRI         |             1564174 |
+| PRK         |             6476751 |
+| PRT         |             1145011 |
+| PRY         |             1020020 |
+| PSE         |              902360 |
+| PYF         |               51441 |
+| QAT         |              355000 |
+| REU         |              131480 |
+| ROM         |             7469006 |
+| RUS         |            69150700 |
+| RWA         |              286000 |
+| SAU         |            10636700 |
+| SDN         |             4752187 |
+| SEN         |             2770458 |
+| SGP         |             4017733 |
+| SHN         |                1500 |
+| SJM         |                1438 |
+| SLB         |               50100 |
+| SLE         |              850000 |
+| SLV         |             1138231 |
+| SMR         |                7096 |
+| SOM         |             1177000 |
+| SPM         |                5808 |
+| STP         |               49541 |
+| SUR         |              112000 |
+| SVK         |              784143 |
+| SVN         |              386518 |
+| SWE         |             2891431 |
+| SWZ         |               61000 |
+| SYC         |               41000 |
+| SYR         |             4477784 |
+| TCA         |                4800 |
+| TCD         |              630465 |
+| TGO         |              375000 |
+| THA         |             7953161 |
+| TJK         |              685500 |
+| TKL         |                 300 |
+| TKM         |              972600 |
+| TMP         |               47900 |
+| TON         |               22400 |
+| TTO         |               99997 |
+| TUN         |             1798500 |
+| TUR         |            28327028 |
+| TUV         |                4600 |
+| TWN         |            13569336 |
+| TZA         |             2944034 |
+| UGA         |              890800 |
+| UKR         |            20074000 |
+| URY         |             1236000 |
+| USA         |            78625774 |
+| UZB         |             5183900 |
+| VAT         |                 455 |
+| VCT         |               17100 |
+| VEN         |            12251091 |
+| VGB         |                8000 |
+| VIR         |               13000 |
+| VNM         |             9364813 |
+| VUT         |               33700 |
+| WLF         |                1137 |
+| WSM         |               35900 |
+| YEM         |             1743700 |
+| YUG         |             2189507 |
+| ZAF         |            15196370 |
+| ZMB         |             2473500 |
+| ZWE         |             2730420 |
++-------------+---------------------+
+232 rows in set (0.01 sec)
+
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos agrupar las ciudades por país y calcular el promedio de la población de las ciudades en cada país.
+   /*> */
+(world) mysql> SELECT CountryCode, AVG(Population) AS AvgCityPopulation
+    -> FROM city
+    -> GROUP BY CountryCode;
++-------------+-------------------+
+| CountryCode | AvgCityPopulation |
++-------------+-------------------+
+| ABW         |        29034.0000 |
+| AFG         |       583025.0000 |
+| AGO         |       512320.0000 |
+| AIA         |          778.0000 |
+| ALB         |       270000.0000 |
+| AND         |        21189.0000 |
+| ANT         |         2345.0000 |
+| ARE         |       345667.2000 |
+| ARG         |       350816.8947 |
+| ARM         |       544366.6667 |
+| ASM         |         3761.5000 |
+| ATG         |        24000.0000 |
+| AUS         |       808119.0000 |
+| AUT         |       397378.8333 |
+| AZE         |       616000.0000 |
+| BDI         |       300000.0000 |
+| BEL         |       178813.5556 |
+| BEN         |       242125.7500 |
+| BFA         |       409666.6667 |
+| BGD         |       357079.4167 |
+| BGR         |       269691.5000 |
+| BHR         |       148000.0000 |
+| BHS         |       172000.0000 |
+| BIH         |       199702.0000 |
+| BLR         |       296312.5000 |
+| BLZ         |        31457.5000 |
+| BMU         |         1500.0000 |
+| BOL         |       422330.5000 |
+| BRA         |       343507.4480 |
+| BRB         |         6070.0000 |
+| BRN         |        21484.0000 |
+| BTN         |        22000.0000 |
+| BWA         |       157411.0000 |
+| CAF         |       524000.0000 |
+| CAN         |       258649.7959 |
+| CCK         |          335.0000 |
+| CHE         |       182840.0000 |
+| CHL         |       335102.4138 |
+| CHN         |       484720.6997 |
+| CIV         |       638227.4000 |
+| CMR         |       503222.0000 |
+| COD         |       548034.1667 |
+| COG         |       725000.0000 |
+| COK         |        11900.0000 |
+| COL         |       532920.7895 |
+| COM         |        36000.0000 |
+| CPV         |        94800.0000 |
+| CRI         |       339131.0000 |
+| CUB         |       330708.9286 |
+| CXR         |          700.0000 |
+| CYM         |        19600.0000 |
+| CYP         |       174700.0000 |
+| CZE         |       263471.1000 |
+| DEU         |       282209.4946 |
+| DJI         |       383000.0000 |
+| DMA         |        16243.0000 |
+| DNK         |       243189.0000 |
+| DOM         |       406379.3333 |
+| DZA         |       288454.3889 |
+| ECU         |       382942.8000 |
+| EGY         |       542785.9189 |
+| ERI         |       431000.0000 |
+| ESH         |       169000.0000 |
+| ESP         |       282528.6271 |
+| EST         |       252613.5000 |
+| ETH         |       455762.0000 |
+| FIN         |       218988.4286 |
+| FJI         |        77366.0000 |
+| FLK         |         1636.0000 |
+| FRA         |       231112.3500 |
+| FRO         |        14542.0000 |
+| FSM         |        15300.0000 |
+| GAB         |       419000.0000 |
+| GBR         |       276995.9630 |
+| GEO         |       376180.0000 |
+| GHA         |       363977.8000 |
+| GIB         |        27025.0000 |
+| GIN         |      1090610.0000 |
+| GLP         |        37690.0000 |
+| GMB         |        72463.0000 |
+| GNB         |       241000.0000 |
+| GNQ         |        40000.0000 |
+| GRC         |       246605.3750 |
+| GRD         |         4621.0000 |
+| GRL         |        13445.0000 |
+| GTM         |       306297.0000 |
+| GUF         |        50699.0000 |
+| GUM         |         5319.5000 |
+| GUY         |       254000.0000 |
+| HKG         |      1650316.5000 |
+| HND         |       429000.0000 |
+| HRV         |       292220.7500 |
+| HTI         |       379334.5000 |
+| HUN         |       328145.5556 |
+| IDN         |       441008.1765 |
+| IND         |       361579.2551 |
+| IRL         |       304520.5000 |
+| IRN         |       388552.0896 |
+| IRQ         |       595069.4000 |
+| ISL         |       109184.0000 |
+| ISR         |       200928.5714 |
+| ITA         |       260121.0172 |
+| JAM         |       104713.3333 |
+| JOR         |       369535.4000 |
+| JPN         |       314375.4315 |
+| KAZ         |       261152.3810 |
+| KEN         |       440349.1250 |
+| KGZ         |       406050.0000 |
+| KHM         |       268351.6667 |
+| KIR         |         3640.5000 |
+| KNA         |        11600.0000 |
+| KOR         |       557141.3286 |
+| KWT         |        87084.0000 |
+| LAO         |       314226.0000 |
+| LBN         |       670000.0000 |
+| LBR         |       850000.0000 |
+| LBY         |       674251.7500 |
+| LCA         |         2301.0000 |
+| LIE         |         5194.5000 |
+| LKA         |       220714.2857 |
+| LSO         |       297000.0000 |
+| LTU         |       294663.4000 |
+| LUX         |        80700.0000 |
+| LVA         |       322865.3333 |
+| MAC         |       437500.0000 |
+| MAR         |       398071.0000 |
+| MCO         |         7194.0000 |
+| MDA         |       298325.0000 |
+| MDG         |       224632.2000 |
+| MDV         |        71000.0000 |
+| MEX         |       345390.2948 |
+| MHL         |        28000.0000 |
+| MKD         |       444299.0000 |
+| MLI         |       809552.0000 |
+| MLT         |        14259.0000 |
+| MMR         |       387687.5000 |
+| MNG         |       773700.0000 |
+| MNP         |         9200.0000 |
+| MOZ         |       261928.7500 |
+| MRT         |       382450.0000 |
+| MSR         |         2000.0000 |
+| MTQ         |        94050.0000 |
+| MUS         |       112426.6667 |
+| MWI         |       457059.5000 |
+| MYS         |       255841.1667 |
+| MYT         |        12000.0000 |
+| NAM         |       169000.0000 |
+| NCL         |        76293.0000 |
+| NER         |       217952.3333 |
+| NFK         |          800.0000 |
+| NGA         |       271357.8125 |
+| NIC         |       317305.7500 |
+| NIU         |          682.0000 |
+| NLD         |       185001.7500 |
+| NOR         |       220005.6000 |
+| NPL         |       226480.6000 |
+| NRU         |         2304.5000 |
+| NZL         |       205288.8889 |
+| OMN         |       107419.2000 |
+| PAK         |       534690.5932 |
+| PAN         |       393377.5000 |
+| PCN         |           42.0000 |
+| PER         |       552147.3636 |
+| PHL         |       227461.6985 |
+| PLW         |        12000.0000 |
+| PNG         |       247000.0000 |
+| POL         |       265623.4318 |
+| PRI         |       173797.1111 |
+| PRK         |       498211.6154 |
+| PRT         |       229002.2000 |
+| PRY         |       204004.0000 |
+| PSE         |       150393.3333 |
+| PYF         |        25720.5000 |
+| QAT         |       355000.0000 |
+| REU         |       131480.0000 |
+| ROM         |       257551.9310 |
+| RUS         |       365876.7196 |
+| RWA         |       286000.0000 |
+| SAU         |       443195.8333 |
+| SDN         |       396015.5833 |
+| SEN         |       307828.6667 |
+| SGP         |      4017733.0000 |
+| SHN         |         1500.0000 |
+| SJM         |         1438.0000 |
+| SLB         |        50100.0000 |
+| SLE         |       850000.0000 |
+| SLV         |       162604.4286 |
+| SMR         |         3548.0000 |
+| SOM         |       392333.3333 |
+| SPM         |         5808.0000 |
+| STP         |        49541.0000 |
+| SUR         |       112000.0000 |
+| SVK         |       261381.0000 |
+| SVN         |       193259.0000 |
+| SWE         |       192762.0667 |
+| SWZ         |        61000.0000 |
+| SYC         |        41000.0000 |
+| SYR         |       407071.2727 |
+| TCA         |         4800.0000 |
+| TCD         |       315232.5000 |
+| TGO         |       375000.0000 |
+| THA         |       662763.4167 |
+| TJK         |       342750.0000 |
+| TKL         |          300.0000 |
+| TKM         |       243150.0000 |
+| TMP         |        47900.0000 |
+| TON         |        22400.0000 |
+| TTO         |        49998.5000 |
+| TUN         |       224812.5000 |
+| TUR         |       456887.5484 |
+| TUV         |         4600.0000 |
+| TWN         |       323079.4286 |
+| TZA         |       294403.4000 |
+| UGA         |       890800.0000 |
+| UKR         |       352175.4386 |
+| URY         |      1236000.0000 |
+| USA         |       286955.3796 |
+| UZB         |       304935.2941 |
+| VAT         |          455.0000 |
+| VCT         |        17100.0000 |
+| VEN         |       298807.0976 |
+| VGB         |         8000.0000 |
+| VIR         |        13000.0000 |
+| VNM         |       425673.3182 |
+| VUT         |        33700.0000 |
+| WLF         |         1137.0000 |
+| WSM         |        35900.0000 |
+| YEM         |       290616.6667 |
+| YUG         |       273688.3750 |
+| ZAF         |       345372.0455 |
+| ZMB         |       353357.1429 |
+| ZWE         |       455070.0000 |
++-------------+-------------------+
+232 rows in set (0.01 sec)
+
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos agrupar las ciudades por país y obtiene múltiples métricas: 
+   /*> el número total de ciudades, la población máxima, mínima, total y promedio por país.
+   /*> */
+(world) mysql> SELECT CountryCode, 
+    ->        LPAD(FORMAT(COUNT(*), 0), LENGTH('NumCities'), ' ') AS NumCities, 
+    ->        LPAD(FORMAT(MAX(Population), 0), LENGTH('MaxCityPopulation'), ' ') AS MaxCityPopulation, 
+    ->        LPAD(FORMAT(MIN(Population), 0), LENGTH('MinCityPopulation'), ' ') AS MinCityPopulation, 
+    ->        LPAD(FORMAT(SUM(Population), 0), LENGTH('TotalCityPopulation'), ' ') AS TotalCityPopulation, 
+    ->        LPAD(FORMAT(AVG(Population), 1), LENGTH('AvgCityPopulation'), ' ') AS AvgCityPopulation
+    -> FROM city
+    -> GROUP BY CountryCode;
++-------------+-----------+-------------------+-------------------+---------------------+-------------------+
+| CountryCode | NumCities | MaxCityPopulation | MinCityPopulation | TotalCityPopulation | AvgCityPopulation |
++-------------+-----------+-------------------+-------------------+---------------------+-------------------+
+| ABW         |         1 |            29,034 |            29,034 |              29,034 |          29,034.0 |
+| AFG         |         4 |         1,780,000 |           127,800 |           2,332,100 |         583,025.0 |
+| AGO         |         5 |         2,022,000 |           118,200 |           2,561,600 |         512,320.0 |
+| AIA         |         2 |               961 |               595 |               1,556 |             778.0 |
+| ALB         |         1 |           270,000 |           270,000 |             270,000 |         270,000.0 |
+| AND         |         1 |            21,189 |            21,189 |              21,189 |          21,189.0 |
+| ANT         |         1 |             2,345 |             2,345 |               2,345 |           2,345.0 |
+| ARE         |         5 |           669,181 |           114,395 |           1,728,336 |         345,667.2 |
+| ARG         |        57 |         2,982,146 |            91,101 |          19,996,563 |         350,816.9 |
+| ARM         |         3 |         1,248,700 |           172,700 |           1,633,100 |         544,366.7 |
+| ASM         |         2 |             5,200 |             2,323 |               7,523 |           3,761.5 |
+| ATG         |         1 |            24,000 |            24,000 |              24,000 |          24,000.0 |
+| AUS         |        14 |         3,276,207 |            92,273 |          11,313,666 |         808,119.0 |
+| AUT         |         6 |         1,608,144 |            91,141 |           2,384,273 |         397,378.8 |
+| AZE         |         4 |         1,787,800 |            93,900 |           2,464,000 |         616,000.0 |
+| BDI         |         1 |           300,000 |           300,000 |             300,000 |         300,000.0 |
+| BEL         |         9 |           446,525 |            90,935 |           1,609,322 |         178,813.6 |
+| BEN         |         4 |           536,827 |           103,577 |             968,503 |         242,125.8 |
+| BFA         |         3 |           824,000 |           105,000 |           1,229,000 |         409,666.7 |
+| BGD         |        24 |         3,612,850 |            96,717 |           8,569,906 |         357,079.4 |
+| BGR         |        10 |         1,122,302 |            94,686 |           2,696,915 |         269,691.5 |
+| BHR         |         1 |           148,000 |           148,000 |             148,000 |         148,000.0 |
+| BHS         |         1 |           172,000 |           172,000 |             172,000 |         172,000.0 |
+| BIH         |         3 |           360,000 |            96,027 |             599,106 |         199,702.0 |
+| BLR         |        16 |         1,674,000 |            97,000 |           4,741,000 |         296,312.5 |
+| BLZ         |         2 |            55,810 |             7,105 |              62,915 |          31,457.5 |
+| BMU         |         2 |             1,800 |             1,200 |               3,000 |           1,500.0 |
+| BOL         |         8 |           935,361 |           125,255 |           3,378,644 |         422,330.5 |
+| BRA         |       250 |         9,968,485 |            89,200 |          85,876,862 |         343,507.4 |
+| BRB         |         1 |             6,070 |             6,070 |               6,070 |           6,070.0 |
+| BRN         |         1 |            21,484 |            21,484 |              21,484 |          21,484.0 |
+| BTN         |         1 |            22,000 |            22,000 |              22,000 |          22,000.0 |
+| BWA         |         2 |           213,017 |           101,805 |             314,822 |         157,411.0 |
+| CAF         |         1 |           524,000 |           524,000 |             524,000 |         524,000.0 |
+| CAN         |        49 |         1,016,376 |            89,269 |          12,673,840 |         258,649.8 |
+| CCK         |         2 |               503 |               167 |                 670 |             335.0 |
+| CHE         |         5 |           336,800 |           114,500 |             914,200 |         182,840.0 |
+| CHL         |        29 |         4,703,954 |            91,056 |           9,717,970 |         335,102.4 |
+| CHN         |       363 |         9,696,300 |            89,288 |         175,953,614 |         484,720.7 |
+| CIV         |         5 |         2,500,000 |           109,445 |           3,191,137 |         638,227.4 |
+| CMR         |         7 |         1,448,300 |           112,454 |           3,522,554 |         503,222.0 |
+| COD         |        18 |         5,064,000 |           101,309 |           9,864,615 |         548,034.2 |
+| COG         |         2 |           950,000 |           500,000 |           1,450,000 |         725,000.0 |
+| COK         |         1 |            11,900 |            11,900 |              11,900 |          11,900.0 |
+| COL         |        38 |         6,260,862 |            90,688 |          20,250,990 |         532,920.8 |
+| COM         |         1 |            36,000 |            36,000 |              36,000 |          36,000.0 |
+| CPV         |         1 |            94,800 |            94,800 |              94,800 |          94,800.0 |
+| CRI         |         1 |           339,131 |           339,131 |             339,131 |         339,131.0 |
+| CUB         |        14 |         2,256,000 |            98,505 |           4,629,925 |         330,708.9 |
+| CXR         |         1 |               700 |               700 |                 700 |             700.0 |
+| CYM         |         1 |            19,600 |            19,600 |              19,600 |          19,600.0 |
+| CYP         |         2 |           195,000 |           154,400 |             349,400 |         174,700.0 |
+| CZE         |        10 |         1,181,126 |            91,309 |           2,634,711 |         263,471.1 |
+| DEU         |        93 |         3,386,667 |            89,667 |          26,245,483 |         282,209.5 |
+| DJI         |         1 |           383,000 |           383,000 |             383,000 |         383,000.0 |
+| DMA         |         1 |            16,243 |            16,243 |              16,243 |          16,243.0 |
+| DNK         |         5 |           495,699 |            90,327 |           1,215,945 |         243,189.0 |
+| DOM         |         6 |         1,609,966 |            89,423 |           2,438,276 |         406,379.3 |
+| DZA         |        18 |         2,168,000 |            89,415 |           5,192,179 |         288,454.4 |
+| ECU         |        15 |         2,070,040 |           123,045 |           5,744,142 |         382,942.8 |
+| EGY         |        37 |         6,789,479 |            91,300 |          20,083,079 |         542,785.9 |
+| ERI         |         1 |           431,000 |           431,000 |             431,000 |         431,000.0 |
+| ESH         |         1 |           169,000 |           169,000 |             169,000 |         169,000.0 |
+| ESP         |        59 |         2,879,052 |            92,262 |          16,669,189 |         282,528.6 |
+| EST         |         2 |           403,981 |           101,246 |             505,227 |         252,613.5 |
+| ETH         |         7 |         2,495,000 |            96,140 |           3,190,334 |         455,762.0 |
+| FIN         |         7 |           555,474 |            96,921 |           1,532,919 |         218,988.4 |
+| FJI         |         1 |            77,366 |            77,366 |              77,366 |          77,366.0 |
+| FLK         |         1 |             1,636 |             1,636 |               1,636 |           1,636.0 |
+| FRA         |        40 |         2,125,246 |            90,674 |           9,244,494 |         231,112.4 |
+| FRO         |         1 |            14,542 |            14,542 |              14,542 |          14,542.0 |
+| FSM         |         2 |            22,000 |             8,600 |              30,600 |          15,300.0 |
+| GAB         |         1 |           419,000 |           419,000 |             419,000 |         419,000.0 |
+| GBR         |        81 |         7,285,000 |            23,487 |          22,436,673 |         276,996.0 |
+| GEO         |         5 |         1,235,200 |           111,700 |           1,880,900 |         376,180.0 |
+| GHA         |         5 |         1,070,000 |           103,653 |           1,819,889 |         363,977.8 |
+| GIB         |         1 |            27,025 |            27,025 |              27,025 |          27,025.0 |
+| GIN         |         1 |         1,090,610 |         1,090,610 |           1,090,610 |       1,090,610.0 |
+| GLP         |         2 |            62,947 |            12,433 |              75,380 |          37,690.0 |
+| GMB         |         2 |           102,600 |            42,326 |             144,926 |          72,463.0 |
+| GNB         |         1 |           241,000 |           241,000 |             241,000 |         241,000.0 |
+| GNQ         |         1 |            40,000 |            40,000 |              40,000 |          40,000.0 |
+| GRC         |         8 |           772,072 |           113,090 |           1,972,843 |         246,605.4 |
+| GRD         |         1 |             4,621 |             4,621 |               4,621 |           4,621.0 |
+| GRL         |         1 |            13,445 |            13,445 |              13,445 |          13,445.0 |
+| GTM         |         4 |           823,301 |            90,801 |           1,225,188 |         306,297.0 |
+| GUF         |         1 |            50,699 |            50,699 |              50,699 |          50,699.0 |
+| GUM         |         2 |             9,500 |             1,139 |              10,639 |           5,319.5 |
+| GUY         |         1 |           254,000 |           254,000 |             254,000 |         254,000.0 |
+| HKG         |         2 |         1,987,996 |         1,312,637 |           3,300,633 |       1,650,316.5 |
+| HND         |         3 |           813,900 |            89,200 |           1,287,000 |         429,000.0 |
+| HRV         |         4 |           706,770 |           104,761 |           1,168,883 |         292,220.8 |
+| HTI         |         4 |           884,472 |           102,233 |           1,517,338 |         379,334.5 |
+| HUN         |         9 |         1,811,552 |           105,119 |           2,953,310 |         328,145.6 |
+| IDN         |        85 |         9,604,900 |            89,900 |          37,485,695 |         441,008.2 |
+| IND         |       341 |        10,500,000 |            89,053 |         123,298,526 |         361,579.3 |
+| IRL         |         2 |           481,854 |           127,187 |             609,041 |         304,520.5 |
+| IRN         |        67 |         6,758,845 |            89,800 |          26,032,990 |         388,552.1 |
+| IRQ         |        15 |         4,336,000 |           114,516 |           8,926,041 |         595,069.4 |
+| ISL         |         1 |           109,184 |           109,184 |             109,184 |         109,184.0 |
+| ISR         |        14 |           633,700 |            90,300 |           2,813,000 |         200,928.6 |
+| ITA         |        58 |         2,643,581 |            88,987 |          15,087,019 |         260,121.0 |
+| JAM         |         3 |           110,379 |            99,799 |             314,140 |         104,713.3 |
+| JOR         |         5 |         1,000,000 |            89,104 |           1,847,677 |         369,535.4 |
+| JPN         |       248 |         7,980,230 |            91,170 |          77,965,107 |         314,375.4 |
+| KAZ         |        21 |         1,129,400 |            90,000 |           5,484,200 |         261,152.4 |
+| KEN         |         8 |         2,290,000 |            91,258 |           3,522,793 |         440,349.1 |
+| KGZ         |         2 |           589,400 |           222,700 |             812,100 |         406,050.0 |
+| KHM         |         3 |           570,155 |           105,100 |             805,055 |         268,351.7 |
+| KIR         |         2 |             5,055 |             2,226 |               7,281 |           3,640.5 |
+| KNA         |         1 |            11,600 |            11,600 |              11,600 |          11,600.0 |
+| KOR         |        70 |         9,981,619 |            92,239 |          38,999,893 |         557,141.3 |
+| KWT         |         3 |           130,215 |            28,859 |             261,252 |          87,084.0 |
+| LAO         |         2 |           531,800 |            96,652 |             628,452 |         314,226.0 |
+| LBN         |         2 |         1,100,000 |           240,000 |           1,340,000 |         670,000.0 |
+| LBR         |         1 |           850,000 |           850,000 |             850,000 |         850,000.0 |
+| LBY         |         4 |         1,682,000 |            89,338 |           2,697,007 |         674,251.8 |
+| LCA         |         1 |             2,301 |             2,301 |               2,301 |           2,301.0 |
+| LIE         |         2 |             5,346 |             5,043 |              10,389 |           5,194.5 |
+| LKA         |         7 |           645,000 |           100,000 |           1,545,000 |         220,714.3 |
+| LSO         |         1 |           297,000 |           297,000 |             297,000 |         297,000.0 |
+| LTU         |         5 |           577,969 |           133,695 |           1,473,317 |         294,663.4 |
+| LUX         |         1 |            80,700 |            80,700 |              80,700 |          80,700.0 |
+| LVA         |         3 |           764,328 |            89,439 |             968,596 |         322,865.3 |
+| MAC         |         1 |           437,500 |           437,500 |             437,500 |         437,500.0 |
+| MAR         |        22 |         2,940,623 |            90,400 |           8,757,562 |         398,071.0 |
+| MCO         |         2 |            13,154 |             1,234 |              14,388 |           7,194.0 |
+| MDA         |         4 |           719,900 |           125,700 |           1,193,300 |         298,325.0 |
+| MDG         |         5 |           675,669 |            99,005 |           1,123,161 |         224,632.2 |
+| MDV         |         1 |            71,000 |            71,000 |              71,000 |          71,000.0 |
+| MEX         |       173 |         8,591,309 |            89,143 |          59,752,521 |         345,390.3 |
+| MHL         |         1 |            28,000 |            28,000 |              28,000 |          28,000.0 |
+| MKD         |         1 |           444,299 |           444,299 |             444,299 |         444,299.0 |
+| MLI         |         1 |           809,552 |           809,552 |             809,552 |         809,552.0 |
+| MLT         |         2 |            21,445 |             7,073 |              28,518 |          14,259.0 |
+| MMR         |        16 |         3,361,700 |            94,800 |           6,203,000 |         387,687.5 |
+| MNG         |         1 |           773,700 |           773,700 |             773,700 |         773,700.0 |
+| MNP         |         1 |             9,200 |             9,200 |               9,200 |           9,200.0 |
+| MOZ         |        12 |         1,018,938 |            93,985 |           3,143,145 |         261,928.8 |
+| MRT         |         2 |           667,300 |            97,600 |             764,900 |         382,450.0 |
+| MSR         |         1 |             2,000 |             2,000 |               2,000 |           2,000.0 |
+| MTQ         |         1 |            94,050 |            94,050 |              94,050 |          94,050.0 |
+| MUS         |         3 |           138,200 |            98,464 |             337,280 |         112,426.7 |
+| MWI         |         2 |           478,155 |           435,964 |             914,119 |         457,059.5 |
+| MYS         |        18 |         1,297,526 |           102,019 |           4,605,141 |         255,841.2 |
+| MYT         |         1 |            12,000 |            12,000 |              12,000 |          12,000.0 |
+| NAM         |         1 |           169,000 |           169,000 |             169,000 |         169,000.0 |
+| NCL         |         1 |            76,293 |            76,293 |              76,293 |          76,293.0 |
+| NER         |         3 |           420,000 |           112,965 |             653,857 |         217,952.3 |
+| NFK         |         1 |               800 |               800 |                 800 |             800.0 |
+| NGA         |        64 |         1,518,000 |           101,000 |          17,366,900 |         271,357.8 |
+| NIC         |         4 |           959,000 |            88,971 |           1,269,223 |         317,305.8 |
+| NIU         |         1 |               682 |               682 |                 682 |             682.0 |
+| NLD         |        28 |           731,200 |            92,713 |           5,180,049 |         185,001.8 |
+| NOR         |         5 |           508,726 |           101,340 |           1,100,028 |         220,005.6 |
+| NPL         |         5 |           591,835 |            90,639 |           1,132,403 |         226,480.6 |
+| NRU         |         2 |             4,050 |               559 |               4,609 |           2,304.5 |
+| NZL         |         9 |           381,800 |            98,100 |           1,847,600 |         205,288.9 |
+| OMN         |         5 |           155,000 |            51,969 |             537,096 |         107,419.2 |
+| PAK         |        59 |         9,269,265 |            89,400 |          31,546,745 |         534,690.6 |
+| PAN         |         2 |           471,373 |           315,382 |             786,755 |         393,377.5 |
+| PCN         |         1 |                42 |                42 |                  42 |              42.0 |
+| PER         |        22 |         6,464,693 |            90,642 |          12,147,242 |         552,147.4 |
+| PHL         |       136 |         2,173,831 |            90,603 |          30,934,791 |         227,461.7 |
+| PLW         |         1 |            12,000 |            12,000 |              12,000 |          12,000.0 |
+| PNG         |         1 |           247,000 |           247,000 |             247,000 |         247,000.0 |
+| POL         |        44 |         1,615,369 |            93,901 |          11,687,431 |         265,623.4 |
+| PRI         |         9 |           434,374 |            94,085 |           1,564,174 |         173,797.1 |
+| PRK         |        13 |         2,484,000 |           171,500 |           6,476,751 |         498,211.6 |
+| PRT         |         5 |           563,210 |            90,535 |           1,145,011 |         229,002.2 |
+| PRY         |         5 |           557,776 |            95,287 |           1,020,020 |         204,004.0 |
+| PSE         |         6 |           353,632 |            92,020 |             902,360 |         150,393.3 |
+| PYF         |         2 |            25,888 |            25,553 |              51,441 |          25,720.5 |
+| QAT         |         1 |           355,000 |           355,000 |             355,000 |         355,000.0 |
+| REU         |         1 |           131,480 |           131,480 |             131,480 |         131,480.0 |
+| ROM         |        29 |         2,016,131 |            93,976 |           7,469,006 |         257,551.9 |
+| RUS         |       189 |         8,389,200 |            89,800 |          69,150,700 |         365,876.7 |
+| RWA         |         1 |           286,000 |           286,000 |             286,000 |         286,000.0 |
+| SAU         |        24 |         3,324,000 |            91,000 |          10,636,700 |         443,195.8 |
+| SDN         |        12 |         1,271,403 |           114,980 |           4,752,187 |         396,015.6 |
+| SEN         |         9 |           855,287 |            99,400 |           2,770,458 |         307,828.7 |
+| SGP         |         1 |         4,017,733 |         4,017,733 |           4,017,733 |       4,017,733.0 |
+| SHN         |         1 |             1,500 |             1,500 |               1,500 |           1,500.0 |
+| SJM         |         1 |             1,438 |             1,438 |               1,438 |           1,438.0 |
+| SLB         |         1 |            50,100 |            50,100 |              50,100 |          50,100.0 |
+| SLE         |         1 |           850,000 |           850,000 |             850,000 |         850,000.0 |
+| SLV         |         7 |           415,346 |            88,800 |           1,138,231 |         162,604.4 |
+| SMR         |         2 |             4,802 |             2,294 |               7,096 |           3,548.0 |
+| SOM         |         3 |           997,000 |            90,000 |           1,177,000 |         392,333.3 |
+| SPM         |         1 |             5,808 |             5,808 |               5,808 |           5,808.0 |
+| STP         |         1 |            49,541 |            49,541 |              49,541 |          49,541.0 |
+| SUR         |         1 |           112,000 |           112,000 |             112,000 |         112,000.0 |
+| SVK         |         3 |           448,292 |            93,977 |             784,143 |         261,381.0 |
+| SVN         |         2 |           270,986 |           115,532 |             386,518 |         193,259.0 |
+| SWE         |        15 |           750,348 |            90,742 |           2,891,431 |         192,762.1 |
+| SWZ         |         1 |            61,000 |            61,000 |              61,000 |          61,000.0 |
+| SYC         |         1 |            41,000 |            41,000 |              41,000 |          41,000.0 |
+| SYR         |        11 |         1,347,000 |            91,081 |           4,477,784 |         407,071.3 |
+| TCA         |         1 |             4,800 |             4,800 |               4,800 |           4,800.0 |
+| TCD         |         2 |           530,965 |            99,500 |             630,465 |         315,232.5 |
+| TGO         |         1 |           375,000 |           375,000 |             375,000 |         375,000.0 |
+| THA         |        12 |         6,320,174 |            94,100 |           7,953,161 |         662,763.4 |
+| TJK         |         2 |           524,000 |           161,500 |             685,500 |         342,750.0 |
+| TKL         |         1 |               300 |               300 |                 300 |             300.0 |
+| TKM         |         4 |           540,600 |           101,000 |             972,600 |         243,150.0 |
+| TMP         |         1 |            47,900 |            47,900 |              47,900 |          47,900.0 |
+| TON         |         1 |            22,400 |            22,400 |              22,400 |          22,400.0 |
+| TTO         |         2 |            56,601 |            43,396 |              99,997 |          49,998.5 |
+| TUN         |         8 |           690,600 |           106,600 |           1,798,500 |         224,812.5 |
+| TUR         |        62 |         8,787,958 |            90,200 |          28,327,028 |         456,887.5 |
+| TUV         |         1 |             4,600 |             4,600 |               4,600 |           4,600.0 |
+| TWN         |        42 |         2,641,312 |            90,000 |          13,569,336 |         323,079.4 |
+| TZA         |        10 |         1,747,000 |            92,800 |           2,944,034 |         294,403.4 |
+| UGA         |         1 |           890,800 |           890,800 |             890,800 |         890,800.0 |
+| UKR         |        57 |         2,624,000 |            89,000 |          20,074,000 |         352,175.4 |
+| URY         |         1 |         1,236,000 |         1,236,000 |           1,236,000 |       1,236,000.0 |
+| USA         |       274 |         8,008,278 |            89,063 |          78,625,774 |         286,955.4 |
+| UZB         |        17 |         2,117,500 |           109,500 |           5,183,900 |         304,935.3 |
+| VAT         |         1 |               455 |               455 |                 455 |             455.0 |
+| VCT         |         1 |            17,100 |            17,100 |              17,100 |          17,100.0 |
+| VEN         |        41 |         1,975,294 |            90,000 |          12,251,091 |         298,807.1 |
+| VGB         |         1 |             8,000 |             8,000 |               8,000 |           8,000.0 |
+| VIR         |         1 |            13,000 |            13,000 |              13,000 |          13,000.0 |
+| VNM         |        22 |         3,980,000 |            97,044 |           9,364,813 |         425,673.3 |
+| VUT         |         1 |            33,700 |            33,700 |              33,700 |          33,700.0 |
+| WLF         |         1 |             1,137 |             1,137 |               1,137 |           1,137.0 |
+| WSM         |         1 |            35,900 |            35,900 |              35,900 |          35,900.0 |
+| YEM         |         6 |           503,600 |           103,300 |           1,743,700 |         290,616.7 |
+| YUG         |         8 |         1,204,000 |            92,303 |           2,189,507 |         273,688.4 |
+| ZAF         |        44 |         2,352,121 |            89,292 |          15,196,370 |         345,372.0 |
+| ZMB         |         7 |         1,317,000 |           118,100 |           2,473,500 |         353,357.1 |
+| ZWE         |         6 |         1,410,000 |           128,037 |           2,730,420 |         455,070.0 |
++-------------+-----------+-------------------+-------------------+---------------------+-------------------+
+232 rows in set (0.01 sec)
+
+(world) mysql> 
+(world) mysql> /*
+   /*> GROUP_CONCAT()
+   /*> Función que devuelve un resultado de cadena con valores no nulos concatenados de un grupo.
+   /*> Devuelve NULL si no hay valores no nulos.
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos listar las ciudades de cada país en un formato concatenado.
+   /*> */
+(world) mysql> SELECT CountryCode, GROUP_CONCAT(Name) AS Cities
+    -> FROM city
+    -> GROUP BY CountryCode
+    -> LIMIT 10;
++-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| CountryCode | Cities                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
++-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ABW         | Oranjestad                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| AFG         | Kabul,Qandahar,Herat,Mazar-e-Sharif                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| AGO         | Luanda,Huambo,Lobito,Benguela,Namibe                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| AIA         | South Hill,The Valley                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ALB         | Tirana                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| AND         | Andorra la Vella                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ANT         | Willemstad                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ARE         | Dubai,Abu Dhabi,Sharja,al-Ayn,Ajman                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ARG         | Buenos Aires,La Matanza,Córdoba,Rosario,Lomas de Zamora,Quilmes,Almirante Brown,La Plata,Mar del Plata,San Miguel de Tucumán,Lanús,Merlo,General San Martín,Salta,Moreno,Santa Fé,Avellaneda,Tres de Febrero,Morón,Florencio Varela,San Isidro,Tigre,Malvinas Argentinas,Vicente López,Berazategui,Corrientes,San Miguel,Bahía Blanca,Esteban Echeverría,Resistencia,José C. Paz,Paraná,Godoy Cruz,Posadas,Guaymallén,Santiago del Estero,San Salvador de Jujuy,Hurlingham,Neuquén,Ituzaingó,San Fernando,Formosa,Las Heras,La Rioja,San Fernando del Valle de Cata,Río Cuarto,Comodoro Rivadavia,Mendoza,San Nicolás de los Arroyos,San Juan,Escobar,Concordia,Pilar,San Luis,Ezeiza,San Rafael,Tandil                 |
+| ARM         | Yerevan,Gjumri,Vanadzor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
++-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+10 rows in set (0.00 sec)
+
+(world) mysql> -- Limitamos los registros a 10 para reducir los resultados en pantalla.
+(world) mysql> 
+(world) mysql> /*
+   /*> Para tener una mejor visualización cuando los resultados son demasiado anchos para la ventana actual,
+   /*> terminamos la sentencia con \G en lugar de ;
+   /*> Esto hace que los conjuntos de resultados se muestren verticalmente.
+   /*> */
+(world) mysql> SELECT CountryCode, GROUP_CONCAT(Name) AS Cities
+    -> FROM city
+    -> GROUP BY CountryCode
+    -> LIMIT 10 \G
+*************************** 1. row ***************************
+CountryCode: ABW
+     Cities: Oranjestad
+*************************** 2. row ***************************
+CountryCode: AFG
+     Cities: Kabul,Qandahar,Herat,Mazar-e-Sharif
+*************************** 3. row ***************************
+CountryCode: AGO
+     Cities: Luanda,Huambo,Lobito,Benguela,Namibe
+*************************** 4. row ***************************
+CountryCode: AIA
+     Cities: South Hill,The Valley
+*************************** 5. row ***************************
+CountryCode: ALB
+     Cities: Tirana
+*************************** 6. row ***************************
+CountryCode: AND
+     Cities: Andorra la Vella
+*************************** 7. row ***************************
+CountryCode: ANT
+     Cities: Willemstad
+*************************** 8. row ***************************
+CountryCode: ARE
+     Cities: Dubai,Abu Dhabi,Sharja,al-Ayn,Ajman
+*************************** 9. row ***************************
+CountryCode: ARG
+     Cities: Buenos Aires,La Matanza,Córdoba,Rosario,Lomas de Zamora,Quilmes,Almirante Brown,La Plata,Mar del Plata,San Miguel de Tucumán,Lanús,Merlo,General San Martín,Salta,Moreno,Santa Fé,Avellaneda,Tres de Febrero,Morón,Florencio Varela,San Isidro,Tigre,Malvinas Argentinas,Vicente López,Berazategui,Corrientes,San Miguel,Bahía Blanca,Esteban Echeverría,Resistencia,José C. Paz,Paraná,Godoy Cruz,Posadas,Guaymallén,Santiago del Estero,San Salvador de Jujuy,Hurlingham,Neuquén,Ituzaingó,San Fernando,Formosa,Las Heras,La Rioja,San Fernando del Valle de Cata,Río Cuarto,Comodoro Rivadavia,Mendoza,San Nicolás de los Arroyos,San Juan,Escobar,Concordia,Pilar,San Luis,Ezeiza,San Rafael,Tandil
+*************************** 10. row ***************************
+CountryCode: ARM
+     Cities: Yerevan,Gjumri,Vanadzor
+10 rows in set (0.00 sec)
+
+(world) mysql> -- Limitamos los registros a 10 para reducir los resultados en pantalla.
+(world) mysql> 
+(world) mysql> /*
+   /*> La función GROUP_CONCAT() admite las siguientes opciones:
+   /*> GROUP_CONCAT(Name ORDER BY Name ASC SEPARATOR ' <-> ')
+   /*> Al usar ORDER BY hacemos que el formato concatenado esté ordenado.
+   /*> Por default, el separador es una coma (,)
+   /*> El separador se puede cambiar al especificarlo con SEPARATOR.
+   /*> */
+(world) mysql> SELECT CountryCode, GROUP_CONCAT(Name ORDER BY Name ASC SEPARATOR ' <-> ') AS Cities
+    -> FROM city
+    -> GROUP BY CountryCode 
+    -> LIMIT 10 \G
+*************************** 1. row ***************************
+CountryCode: ABW
+     Cities: Oranjestad
+*************************** 2. row ***************************
+CountryCode: AFG
+     Cities: Herat <-> Kabul <-> Mazar-e-Sharif <-> Qandahar
+*************************** 3. row ***************************
+CountryCode: AGO
+     Cities: Benguela <-> Huambo <-> Lobito <-> Luanda <-> Namibe
+*************************** 4. row ***************************
+CountryCode: AIA
+     Cities: South Hill <-> The Valley
+*************************** 5. row ***************************
+CountryCode: ALB
+     Cities: Tirana
+*************************** 6. row ***************************
+CountryCode: AND
+     Cities: Andorra la Vella
+*************************** 7. row ***************************
+CountryCode: ANT
+     Cities: Willemstad
+*************************** 8. row ***************************
+CountryCode: ARE
+     Cities: Abu Dhabi <-> Ajman <-> al-Ayn <-> Dubai <-> Sharja
+*************************** 9. row ***************************
+CountryCode: ARG
+     Cities: Almirante Brown <-> Avellaneda <-> Bahía Blanca <-> Berazategui <-> Buenos Aires <-> Comodoro Rivadavia <-> Concordia <-> Córdoba <-> Corrientes <-> Escobar <-> Esteban Echeverría <-> Ezeiza <-> Florencio Varela <-> Formosa <-> General San Martín <-> Godoy Cruz <-> Guaymallén <-> Hurlingham <-> Ituzaingó <-> José C. Paz <-> La Matanza <-> La Plata <-> La Rioja <-> Lanús <-> Las Heras <-> Lomas de Zamora <-> Malvinas Argentinas <-> Mar del Plata <-> Mendoza <-> Merlo <-> Moreno <-> Morón <-> Neuquén <-> Paraná <-> Pilar <-> Posadas <-> Quilmes <-> Resistencia <-> Río Cuarto <-> Rosario <-> Salta <-> San Fernando <-> San Fernando del Valle de Cata <-> San Isidro <-> San Juan <-> San Luis <-> San Miguel <-> San Miguel de Tucumán <-> San Nicolás de los Arroyos <-> San Rafael <-> San Salvador de Jujuy <-> Santa Fé <-> Santiago del Estero <-> Tandil <-> Tigre <-> Tres de Febrero <-> Vicente López
+*************************** 10. row ***************************
+CountryCode: ARM
+     Cities: Gjumri <-> Vanadzor <-> Yerevan
+10 rows in set (0.00 sec)
+
+(world) mysql> -- Limitamos los registros a 10 para reducir los resultados en pantalla.
+(world) mysql> 
+(world) mysql> /*
+   /*> JSON_ARRAYAGG()
+   /*> Función que agrega un conjunto de resultados como un único arreglo JSON cuyos elementos consisten en las filas.
+   /*> La función actúa sobre una columna o una expresión que se evalúa a un único valor.
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos obtener un arreglo JSON de todas las ciudades de cada país.
+   /*> */
+(world) mysql> SELECT CountryCode, JSON_ARRAYAGG(Name) AS CitiesArray
+    -> FROM city
+    -> GROUP BY CountryCode
+    -> LIMIT 10 \G
+*************************** 1. row ***************************
+CountryCode: ABW
+CitiesArray: ["Oranjestad"]
+*************************** 2. row ***************************
+CountryCode: AFG
+CitiesArray: ["Kabul", "Qandahar", "Herat", "Mazar-e-Sharif"]
+*************************** 3. row ***************************
+CountryCode: AGO
+CitiesArray: ["Luanda", "Huambo", "Lobito", "Benguela", "Namibe"]
+*************************** 4. row ***************************
+CountryCode: AIA
+CitiesArray: ["South Hill", "The Valley"]
+*************************** 5. row ***************************
+CountryCode: ALB
+CitiesArray: ["Tirana"]
+*************************** 6. row ***************************
+CountryCode: AND
+CitiesArray: ["Andorra la Vella"]
+*************************** 7. row ***************************
+CountryCode: ANT
+CitiesArray: ["Willemstad"]
+*************************** 8. row ***************************
+CountryCode: ARE
+CitiesArray: ["Dubai", "Abu Dhabi", "Sharja", "al-Ayn", "Ajman"]
+*************************** 9. row ***************************
+CountryCode: ARG
+CitiesArray: ["Buenos Aires", "La Matanza", "Córdoba", "Rosario", "Lomas de Zamora", "Quilmes", "Almirante Brown", "La Plata", "Mar del Plata", "San Miguel de Tucumán", "Lanús", "Merlo", "General San Martín", "Salta", "Moreno", "Santa Fé", "Avellaneda", "Tres de Febrero", "Morón", "Florencio Varela", "San Isidro", "Tigre", "Malvinas Argentinas", "Vicente López", "Berazategui", "Corrientes", "San Miguel", "Bahía Blanca", "Esteban Echeverría", "Resistencia", "José C. Paz", "Paraná", "Godoy Cruz", "Posadas", "Guaymallén", "Santiago del Estero", "San Salvador de Jujuy", "Hurlingham", "Neuquén", "Ituzaingó", "San Fernando", "Formosa", "Las Heras", "La Rioja", "San Fernando del Valle de Cata", "Río Cuarto", "Comodoro Rivadavia", "Mendoza", "San Nicolás de los Arroyos", "San Juan", "Escobar", "Concordia", "Pilar", "San Luis", "Ezeiza", "San Rafael", "Tandil"]
+*************************** 10. row ***************************
+CountryCode: ARM
+CitiesArray: ["Yerevan", "Gjumri", "Vanadzor"]
+10 rows in set (0.01 sec)
+
+(world) mysql> -- Limitamos los registros a 10 para reducir los resultados en pantalla.
+(world) mysql> 
+(world) mysql> /*
+   /*> JSON_OBJECTAGG()
+   /*> Función que toma dos columnas o expresiones como argumentos,
+   /*> el primero de los cuales se utiliza como llave y el segundo como valor,
+   /*> y devuelve un objeto JSON que contiene pares llave-valor.
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Queremos crear un objeto JSON que asocie el nombre de la ciudad con su población para cada país.
+   /*> */
+(world) mysql> SELECT CountryCode, JSON_OBJECTAGG(Name, Population) AS CityPopulationObject
+    -> FROM city
+    -> GROUP BY CountryCode
+    -> limit 10 \G
+*************************** 1. row ***************************
+         CountryCode: ABW
+CityPopulationObject: {"Oranjestad": 29034}
+*************************** 2. row ***************************
+         CountryCode: AFG
+CityPopulationObject: {"Herat": 186800, "Kabul": 1780000, "Qandahar": 237500, "Mazar-e-Sharif": 127800}
+*************************** 3. row ***************************
+         CountryCode: AGO
+CityPopulationObject: {"Huambo": 163100, "Lobito": 130000, "Luanda": 2022000, "Namibe": 118200, "Benguela": 128300}
+*************************** 4. row ***************************
+         CountryCode: AIA
+CityPopulationObject: {"South Hill": 961, "The Valley": 595}
+*************************** 5. row ***************************
+         CountryCode: ALB
+CityPopulationObject: {"Tirana": 270000}
+*************************** 6. row ***************************
+         CountryCode: AND
+CityPopulationObject: {"Andorra la Vella": 21189}
+*************************** 7. row ***************************
+         CountryCode: ANT
+CityPopulationObject: {"Willemstad": 2345}
+*************************** 8. row ***************************
+         CountryCode: ARE
+CityPopulationObject: {"Ajman": 114395, "Dubai": 669181, "Sharja": 320095, "al-Ayn": 225970, "Abu Dhabi": 398695}
+*************************** 9. row ***************************
+         CountryCode: ARG
+CityPopulationObject: {"Merlo": 463846, "Pilar": 113428, "Salta": 367550, "Tigre": 296226, "Ezeiza": 99578, "Lanús": 469735, "Moreno": 356993, "Morón": 349246, "Tandil": 91101, "Escobar": 116675, "Formosa": 147636, "Mendoza": 123027, "Paraná": 207041, "Posadas": 201273, "Quilmes": 559249, "Rosario": 907718, "Córdoba": 1157507, "La Plata": 521936, "La Rioja": 138117, "Neuquén": 167296, "San Juan": 119152, "San Luis": 110136, "Concordia": 116485, "Las Heras": 145823, "Santa Fé": 353063, "Avellaneda": 353046, "Corrientes": 258103, "Godoy Cruz": 206998, "Hurlingham": 170028, "Ituzaingó": 158197, "La Matanza": 1266461, "San Isidro": 306341, "San Miguel": 248700, "San Rafael": 94651, "Berazategui": 276916, "Guaymallén": 200595, "Resistencia": 229212, "Río Cuarto": 134355, "Buenos Aires": 2982146, "José C. Paz": 221754, "San Fernando": 153036, "Bahía Blanca": 239810, "Mar del Plata": 512880, "Vicente López": 288341, "Almirante Brown": 538918, "Lomas de Zamora": 622013, "Tres de Febrero": 352311, "Florencio Varela": 315432, "Comodoro Rivadavia": 124104, "Esteban Echeverría": 235760, "General San Martín": 422542, "Malvinas Argentinas": 290335, "Santiago del Estero": 189947, "San Salvador de Jujuy": 178748, "San Miguel de Tucumán": 470809, "San Nicolás de los Arroyos": 119302, "San Fernando del Valle de Cata": 134935}
+*************************** 10. row ***************************
+         CountryCode: ARM
+CityPopulationObject: {"Gjumri": 211700, "Yerevan": 1248700, "Vanadzor": 172700}
+10 rows in set (0.01 sec)
+
+(world) mysql> -- Limitamos los registros a 10 para reducir los resultados en pantalla.
+(world) mysql> 
+(world) mysql> /*
+   /*> WHERE vs HAVING
+   /*> La cláusula HAVING, al igual que la cláusula WHERE, especifica condiciones de selección. 
+   /*> La cláusula WHERE especifica las condiciones de las columnas de la lista de selección, 
+   /*> pero no puede hacer referencia a funciones de agregación. 
+   /*> La cláusula HAVING especifica condiciones sobre grupos, normalmente formados por la cláusula GROUP BY. 
+   /*> El resultado de la consulta sólo incluye los grupos que cumplen las condiciones de HAVING. 
+   /*> (Si no hay ninguna cláusula GROUP BY, todas las filas forman implícitamente un único grupo agregado).
+   /*> 
+   /*> La clave está en que WHERE se usa para filtrar filas antes de que se realice la agregación, 
+   /*> mientras que HAVING filtra los grupos resultantes después de la agregación.
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Ejemplo 1 (Número de ciudades por país que tengan más de 100,000 habitantes.)
+   /*> Uso de WHERE para filtrar solo las ciudades que tiene más de 100,000 habitantes antes de agruparlas por país.
+   /*> */
+(world) mysql> SELECT CountryCode, COUNT(*) AS NumCities
+    -> FROM city
+    -> WHERE Population > 100000
+    -> GROUP BY CountryCode;
++-------------+-----------+
+| CountryCode | NumCities |
++-------------+-----------+
+| AFG         |         4 |
+| AGO         |         5 |
+| ALB         |         1 |
+| ARE         |         5 |
+| ARG         |        54 |
+| ARM         |         3 |
+| AUS         |        13 |
+| AUT         |         5 |
+| AZE         |         3 |
+| BDI         |         1 |
+| BEL         |         8 |
+| BEN         |         4 |
+| BFA         |         3 |
+| BGD         |        20 |
+| BGR         |         9 |
+| BHR         |         1 |
+| BHS         |         1 |
+| BIH         |         2 |
+| BLR         |        15 |
+| BOL         |         8 |
+| BRA         |       216 |
+| BWA         |         2 |
+| CAF         |         1 |
+| CAN         |        45 |
+| CHE         |         5 |
+| CHL         |        25 |
+| CHN         |       341 |
+| CIV         |         5 |
+| CMR         |         7 |
+| COD         |        18 |
+| COG         |         2 |
+| COL         |        37 |
+| CRI         |         1 |
+| CUB         |        13 |
+| CYP         |         2 |
+| CZE         |         5 |
+| DEU         |        83 |
+| DJI         |         1 |
+| DNK         |         4 |
+| DOM         |         5 |
+| DZA         |        16 |
+| ECU         |        15 |
+| EGY         |        31 |
+| ERI         |         1 |
+| ESH         |         1 |
+| ESP         |        55 |
+| EST         |         2 |
+| ETH         |         4 |
+| FIN         |         6 |
+| FRA         |        36 |
+| GAB         |         1 |
+| GBR         |        63 |
+| GEO         |         5 |
+| GHA         |         5 |
+| GIN         |         1 |
+| GMB         |         1 |
+| GNB         |         1 |
+| GRC         |         8 |
+| GTM         |         3 |
+| GUY         |         1 |
+| HKG         |         2 |
+| HND         |         2 |
+| HRV         |         4 |
+| HTI         |         4 |
+| HUN         |         9 |
+| IDN         |        68 |
+| IND         |       310 |
+| IRL         |         2 |
+| IRN         |        59 |
+| IRQ         |        15 |
+| ISL         |         1 |
+| ISR         |        12 |
+| ITA         |        41 |
+| JAM         |         2 |
+| JOR         |         4 |
+| JPN         |       226 |
+| KAZ         |        19 |
+| KEN         |         6 |
+| KGZ         |         2 |
+| KHM         |         3 |
+| KOR         |        68 |
+| KWT         |         2 |
+| LAO         |         1 |
+| LBN         |         2 |
+| LBR         |         1 |
+| LBY         |         3 |
+| LKA         |         6 |
+| LSO         |         1 |
+| LTU         |         5 |
+| LVA         |         2 |
+| MAC         |         1 |
+| MAR         |        19 |
+| MDA         |         4 |
+| MDG         |         4 |
+| MEX         |       153 |
+| MKD         |         1 |
+| MLI         |         1 |
+| MMR         |        14 |
+| MNG         |         1 |
+| MOZ         |         9 |
+| MRT         |         1 |
+| MUS         |         2 |
+| MWI         |         2 |
+| MYS         |        18 |
+| NAM         |         1 |
+| NER         |         3 |
+| NGA         |        64 |
+| NIC         |         2 |
+| NLD         |        25 |
+| NOR         |         5 |
+| NPL         |         4 |
+| NZL         |         8 |
+| OMN         |         3 |
+| PAK         |        50 |
+| PAN         |         2 |
+| PER         |        21 |
+| PHL         |       117 |
+| PNG         |         1 |
+| POL         |        42 |
+| PRI         |         7 |
+| PRK         |        13 |
+| PRT         |         3 |
+| PRY         |         3 |
+| PSE         |         5 |
+| QAT         |         1 |
+| REU         |         1 |
+| ROM         |        24 |
+| RUS         |       166 |
+| RWA         |         1 |
+| SAU         |        20 |
+| SDN         |        12 |
+| SEN         |         8 |
+| SGP         |         1 |
+| SLE         |         1 |
+| SLV         |         5 |
+| SOM         |         1 |
+| SUR         |         1 |
+| SVK         |         2 |
+| SVN         |         2 |
+| SWE         |        11 |
+| SYR         |        10 |
+| TCD         |         1 |
+| TGO         |         1 |
+| THA         |        10 |
+| TJK         |         2 |
+| TKM         |         4 |
+| TUN         |         8 |
+| TUR         |        57 |
+| TWN         |        37 |
+| TZA         |         8 |
+| UGA         |         1 |
+| UKR         |        48 |
+| URY         |         1 |
+| USA         |       245 |
+| UZB         |        17 |
+| VEN         |        34 |
+| VNM         |        21 |
+| YEM         |         6 |
+| YUG         |         7 |
+| ZAF         |        40 |
+| ZMB         |         7 |
+| ZWE         |         6 |
++-------------+-----------+
+162 rows in set (0.01 sec)
+
+(world) mysql> -- WHERE filtra las ciudades que tienen más de 100,000 habitantes antes de que los datos se agrupen por CountryCode. 
+(world) mysql> -- Luego se cuenta cuántas ciudades quedan en cada país.
+(world) mysql> 
+(world) mysql> /*
+   /*> Ejemplo 2 (Países y número de ciudades tales que por país haya más de 3 ciudades.)
+   /*> Uso de HAVING para mostrar solo los países que tienen más de 3 ciudades en total.
+   /*> */
+(world) mysql> SELECT CountryCode, COUNT(*) AS NumCities
+    -> FROM city
+    -> GROUP BY CountryCode
+    -> HAVING COUNT(*) > 3;
++-------------+-----------+
+| CountryCode | NumCities |
++-------------+-----------+
+| AFG         |         4 |
+| AGO         |         5 |
+| ARE         |         5 |
+| ARG         |        57 |
+| AUS         |        14 |
+| AUT         |         6 |
+| AZE         |         4 |
+| BEL         |         9 |
+| BEN         |         4 |
+| BGD         |        24 |
+| BGR         |        10 |
+| BLR         |        16 |
+| BOL         |         8 |
+| BRA         |       250 |
+| CAN         |        49 |
+| CHE         |         5 |
+| CHL         |        29 |
+| CHN         |       363 |
+| CIV         |         5 |
+| CMR         |         7 |
+| COD         |        18 |
+| COL         |        38 |
+| CUB         |        14 |
+| CZE         |        10 |
+| DEU         |        93 |
+| DNK         |         5 |
+| DOM         |         6 |
+| DZA         |        18 |
+| ECU         |        15 |
+| EGY         |        37 |
+| ESP         |        59 |
+| ETH         |         7 |
+| FIN         |         7 |
+| FRA         |        40 |
+| GBR         |        81 |
+| GEO         |         5 |
+| GHA         |         5 |
+| GRC         |         8 |
+| GTM         |         4 |
+| HRV         |         4 |
+| HTI         |         4 |
+| HUN         |         9 |
+| IDN         |        85 |
+| IND         |       341 |
+| IRN         |        67 |
+| IRQ         |        15 |
+| ISR         |        14 |
+| ITA         |        58 |
+| JOR         |         5 |
+| JPN         |       248 |
+| KAZ         |        21 |
+| KEN         |         8 |
+| KOR         |        70 |
+| LBY         |         4 |
+| LKA         |         7 |
+| LTU         |         5 |
+| MAR         |        22 |
+| MDA         |         4 |
+| MDG         |         5 |
+| MEX         |       173 |
+| MMR         |        16 |
+| MOZ         |        12 |
+| MYS         |        18 |
+| NGA         |        64 |
+| NIC         |         4 |
+| NLD         |        28 |
+| NOR         |         5 |
+| NPL         |         5 |
+| NZL         |         9 |
+| OMN         |         5 |
+| PAK         |        59 |
+| PER         |        22 |
+| PHL         |       136 |
+| POL         |        44 |
+| PRI         |         9 |
+| PRK         |        13 |
+| PRT         |         5 |
+| PRY         |         5 |
+| PSE         |         6 |
+| ROM         |        29 |
+| RUS         |       189 |
+| SAU         |        24 |
+| SDN         |        12 |
+| SEN         |         9 |
+| SLV         |         7 |
+| SWE         |        15 |
+| SYR         |        11 |
+| THA         |        12 |
+| TKM         |         4 |
+| TUN         |         8 |
+| TUR         |        62 |
+| TWN         |        42 |
+| TZA         |        10 |
+| UKR         |        57 |
+| USA         |       274 |
+| UZB         |        17 |
+| VEN         |        41 |
+| VNM         |        22 |
+| YEM         |         6 |
+| YUG         |         8 |
+| ZAF         |        44 |
+| ZMB         |         7 |
+| ZWE         |         6 |
++-------------+-----------+
+103 rows in set (0.00 sec)
+
+(world) mysql> -- Notemos que no hay filtro de las filas antes de la agregación.
+(world) mysql> -- Primero se agrupan todas las ciudades por país,
+(world) mysql> -- y luego se usa HAVING para filtrar los grupos donde el número de ciudades es mayor a 3.
+(world) mysql> 
+(world) mysql> /*
+   /*> Ejemplo 3 (Número de ciudades por país que tengan más de 50,000 habitantes tal que por país hayan más de 5 ciudades con esta condición.)
+   /*> Uso de WHERE para filtrar las ciudades con más de 50,000 habitantes antes de agruparlas.
+   /*> Luego, HAVING filtra solo los países que tienen más de 5 ciudades con más de 50,000 habitantes.
+   /*> */
+(world) mysql> SELECT CountryCode, COUNT(*) AS NumCities
+    -> FROM city
+    -> WHERE Population > 50000
+    -> GROUP BY CountryCode
+    -> HAVING COUNT(*) > 5;
++-------------+-----------+
+| CountryCode | NumCities |
++-------------+-----------+
+| ARG         |        57 |
+| AUS         |        14 |
+| AUT         |         6 |
+| BEL         |         9 |
+| BGD         |        24 |
+| BGR         |        10 |
+| BLR         |        16 |
+| BOL         |         8 |
+| BRA         |       250 |
+| CAN         |        49 |
+| CHL         |        29 |
+| CHN         |       363 |
+| CMR         |         7 |
+| COD         |        18 |
+| COL         |        38 |
+| CUB         |        14 |
+| CZE         |        10 |
+| DEU         |        93 |
+| DOM         |         6 |
+| DZA         |        18 |
+| ECU         |        15 |
+| EGY         |        37 |
+| ESP         |        59 |
+| ETH         |         7 |
+| FIN         |         7 |
+| FRA         |        40 |
+| GBR         |        79 |
+| GRC         |         8 |
+| HUN         |         9 |
+| IDN         |        85 |
+| IND         |       341 |
+| IRN         |        67 |
+| IRQ         |        15 |
+| ISR         |        14 |
+| ITA         |        58 |
+| JPN         |       248 |
+| KAZ         |        21 |
+| KEN         |         8 |
+| KOR         |        70 |
+| LKA         |         7 |
+| MAR         |        22 |
+| MEX         |       173 |
+| MMR         |        16 |
+| MOZ         |        12 |
+| MYS         |        18 |
+| NGA         |        64 |
+| NLD         |        28 |
+| NZL         |         9 |
+| PAK         |        59 |
+| PER         |        22 |
+| PHL         |       136 |
+| POL         |        44 |
+| PRI         |         9 |
+| PRK         |        13 |
+| PSE         |         6 |
+| ROM         |        29 |
+| RUS         |       189 |
+| SAU         |        24 |
+| SDN         |        12 |
+| SEN         |         9 |
+| SLV         |         7 |
+| SWE         |        15 |
+| SYR         |        11 |
+| THA         |        12 |
+| TUN         |         8 |
+| TUR         |        62 |
+| TWN         |        42 |
+| TZA         |        10 |
+| UKR         |        57 |
+| USA         |       274 |
+| UZB         |        17 |
+| VEN         |        41 |
+| VNM         |        22 |
+| YEM         |         6 |
+| YUG         |         8 |
+| ZAF         |        44 |
+| ZMB         |         7 |
+| ZWE         |         6 |
++-------------+-----------+
+78 rows in set (0.00 sec)
+
+(world) mysql> -- Primero, WHERE filtra las ciudades que tienen más de 50,000 habitantes.
+(world) mysql> -- Después de agrupar por país, HAVING filtra aquellos países que tienen más de 5 ciudades que cumplen el criterio de población.
+(world) mysql> 
+(world) mysql> /*
+   /*> Ejemplo 4 (Países donde se superen los 10 millones de habitantes considerando solo las ciudades con más de 100,000 habitantes.)
+   /*> Uso de WHERE para filtrar ciudades con una población mayor a 100,000.
+   /*> Luego, HAVING muestra solo los países donde la población total de sus ciudades filtradas supera los 10 millones.
+   /*> */
+(world) mysql> SELECT CountryCode, SUM(Population) AS TotalPopulation
+    -> FROM city
+    -> WHERE Population > 100000
+    -> GROUP BY CountryCode
+    -> HAVING SUM(Population) > 10000000;
++-------------+-----------------+
+| CountryCode | TotalPopulation |
++-------------+-----------------+
+| ARG         |        19711233 |
+| AUS         |        11221393 |
+| BRA         |        82673210 |
+| CAN         |        12307032 |
+| CHN         |       173893596 |
+| COL         |        20160302 |
+| DEU         |        25303941 |
+| EGY         |        19515579 |
+| ESP         |        16290379 |
+| GBR         |        20890312 |
+| IDN         |        35894047 |
+| IND         |       120367170 |
+| IRN         |        25280045 |
+| ITA         |        13486902 |
+| JPN         |        75881672 |
+| KOR         |        38812182 |
+| MEX         |        57845551 |
+| NGA         |        17366900 |
+| PAK         |        30704645 |
+| PER         |        12056600 |
+| PHL         |        29116743 |
+| POL         |        11495601 |
+| RUS         |        66968800 |
+| SAU         |        10261800 |
+| TUR         |        27853928 |
+| TWN         |        13099436 |
+| UKR         |        19246000 |
+| USA         |        75922978 |
+| VEN         |        11589624 |
+| ZAF         |        14819518 |
++-------------+-----------------+
+30 rows in set (0.00 sec)
+
+(world) mysql> -- WHERE elimina las ciudades que tienen menos de 100,000 habitantes antes de la agregación. 
+(world) mysql> -- Luego, HAVING filtra solo los países cuya población total (después del filtro inicial) supera los 10 millones.
+(world) mysql> 
+(world) mysql> /*
+   /*> Ejemplo 5 (Países con promedio mayor a 200,000 habitantes.)
+   /*> Uso de HAVING para mostrar solo aquellos países donde el promedio de la población de las ciudades
+   /*> es mayor a 200,000, (sin filtrar previamente las ciudades).
+   /*> */
+(world) mysql> SELECT CountryCode, AVG(Population) AS AvgCityPopulation
+    -> FROM city
+    -> GROUP BY CountryCode
+    -> HAVING AVG(Population) > 200000;
++-------------+-------------------+
+| CountryCode | AvgCityPopulation |
++-------------+-------------------+
+| AFG         |       583025.0000 |
+| AGO         |       512320.0000 |
+| ALB         |       270000.0000 |
+| ARE         |       345667.2000 |
+| ARG         |       350816.8947 |
+| ARM         |       544366.6667 |
+| AUS         |       808119.0000 |
+| AUT         |       397378.8333 |
+| AZE         |       616000.0000 |
+| BDI         |       300000.0000 |
+| BEN         |       242125.7500 |
+| BFA         |       409666.6667 |
+| BGD         |       357079.4167 |
+| BGR         |       269691.5000 |
+| BLR         |       296312.5000 |
+| BOL         |       422330.5000 |
+| BRA         |       343507.4480 |
+| CAF         |       524000.0000 |
+| CAN         |       258649.7959 |
+| CHL         |       335102.4138 |
+| CHN         |       484720.6997 |
+| CIV         |       638227.4000 |
+| CMR         |       503222.0000 |
+| COD         |       548034.1667 |
+| COG         |       725000.0000 |
+| COL         |       532920.7895 |
+| CRI         |       339131.0000 |
+| CUB         |       330708.9286 |
+| CZE         |       263471.1000 |
+| DEU         |       282209.4946 |
+| DJI         |       383000.0000 |
+| DNK         |       243189.0000 |
+| DOM         |       406379.3333 |
+| DZA         |       288454.3889 |
+| ECU         |       382942.8000 |
+| EGY         |       542785.9189 |
+| ERI         |       431000.0000 |
+| ESP         |       282528.6271 |
+| EST         |       252613.5000 |
+| ETH         |       455762.0000 |
+| FIN         |       218988.4286 |
+| FRA         |       231112.3500 |
+| GAB         |       419000.0000 |
+| GBR         |       276995.9630 |
+| GEO         |       376180.0000 |
+| GHA         |       363977.8000 |
+| GIN         |      1090610.0000 |
+| GNB         |       241000.0000 |
+| GRC         |       246605.3750 |
+| GTM         |       306297.0000 |
+| GUY         |       254000.0000 |
+| HKG         |      1650316.5000 |
+| HND         |       429000.0000 |
+| HRV         |       292220.7500 |
+| HTI         |       379334.5000 |
+| HUN         |       328145.5556 |
+| IDN         |       441008.1765 |
+| IND         |       361579.2551 |
+| IRL         |       304520.5000 |
+| IRN         |       388552.0896 |
+| IRQ         |       595069.4000 |
+| ISR         |       200928.5714 |
+| ITA         |       260121.0172 |
+| JOR         |       369535.4000 |
+| JPN         |       314375.4315 |
+| KAZ         |       261152.3810 |
+| KEN         |       440349.1250 |
+| KGZ         |       406050.0000 |
+| KHM         |       268351.6667 |
+| KOR         |       557141.3286 |
+| LAO         |       314226.0000 |
+| LBN         |       670000.0000 |
+| LBR         |       850000.0000 |
+| LBY         |       674251.7500 |
+| LKA         |       220714.2857 |
+| LSO         |       297000.0000 |
+| LTU         |       294663.4000 |
+| LVA         |       322865.3333 |
+| MAC         |       437500.0000 |
+| MAR         |       398071.0000 |
+| MDA         |       298325.0000 |
+| MDG         |       224632.2000 |
+| MEX         |       345390.2948 |
+| MKD         |       444299.0000 |
+| MLI         |       809552.0000 |
+| MMR         |       387687.5000 |
+| MNG         |       773700.0000 |
+| MOZ         |       261928.7500 |
+| MRT         |       382450.0000 |
+| MWI         |       457059.5000 |
+| MYS         |       255841.1667 |
+| NER         |       217952.3333 |
+| NGA         |       271357.8125 |
+| NIC         |       317305.7500 |
+| NOR         |       220005.6000 |
+| NPL         |       226480.6000 |
+| NZL         |       205288.8889 |
+| PAK         |       534690.5932 |
+| PAN         |       393377.5000 |
+| PER         |       552147.3636 |
+| PHL         |       227461.6985 |
+| PNG         |       247000.0000 |
+| POL         |       265623.4318 |
+| PRK         |       498211.6154 |
+| PRT         |       229002.2000 |
+| PRY         |       204004.0000 |
+| QAT         |       355000.0000 |
+| ROM         |       257551.9310 |
+| RUS         |       365876.7196 |
+| RWA         |       286000.0000 |
+| SAU         |       443195.8333 |
+| SDN         |       396015.5833 |
+| SEN         |       307828.6667 |
+| SGP         |      4017733.0000 |
+| SLE         |       850000.0000 |
+| SOM         |       392333.3333 |
+| SVK         |       261381.0000 |
+| SYR         |       407071.2727 |
+| TCD         |       315232.5000 |
+| TGO         |       375000.0000 |
+| THA         |       662763.4167 |
+| TJK         |       342750.0000 |
+| TKM         |       243150.0000 |
+| TUN         |       224812.5000 |
+| TUR         |       456887.5484 |
+| TWN         |       323079.4286 |
+| TZA         |       294403.4000 |
+| UGA         |       890800.0000 |
+| UKR         |       352175.4386 |
+| URY         |      1236000.0000 |
+| USA         |       286955.3796 |
+| UZB         |       304935.2941 |
+| VEN         |       298807.0976 |
+| VNM         |       425673.3182 |
+| YEM         |       290616.6667 |
+| YUG         |       273688.3750 |
+| ZAF         |       345372.0455 |
+| ZMB         |       353357.1429 |
+| ZWE         |       455070.0000 |
++-------------+-------------------+
+139 rows in set (0.01 sec)
+
+(world) mysql> -- Notemos que no se utiliza WHERE.
+(world) mysql> -- Primero se calcula el promedio de población por país.
+(world) mysql> -- Luego, HAVING se aplica para mostrar solo los países donde el promedio es mayor a 200,000.
+(world) mysql> 
+(world) mysql> /*
+   /*> CONCLUSIONES:
+   /*> > WHERE: Se aplica antes de la agregación, afectando qué filas se incluyen en el cálculo de las funciones de agregación.
+   /*> > HAVING: Se aplica después de la agregación, filtrando los resultados basados en las agregaciones ya calculadas.
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> NOTA:
+   /*> LENGTH() regresa la longitud de una cadena en bytes.
+   /*> CHAR_LENGTH() regresa la longitud de una cadena.
+   /*> 
+   /*> Observa el resultado siguiente:
+   /*> SELECT LENGTH('México'), CHAR_LENGTH('México');
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Ejemplo extra:
+   /*> Agrupación de ciudades tal que CountryCode inicia con M y el total de ciudades es mayor a 10; mostrando el nombre y la longitud del nombre entre paréntesis.
+   /*> */
+(world) mysql> SELECT CountryCode, GROUP_CONCAT(CONCAT(Name, ' (', CHAR_LENGTH(Name), ')') SEPARATOR ', ') AS CitiesWithLength
+    -> FROM city
+    -> WHERE CountryCode LIKE 'M%'
+    -> GROUP BY CountryCode
+    -> HAVING COUNT(*) > 10 \G
+*************************** 1. row ***************************
+     CountryCode: MAR
+CitiesWithLength: Casablanca (10), Rabat (5), Marrakech (9), Fès (3), Tanger (6), Salé (4), Meknès (6), Oujda (5), Kénitra (7), Tétouan (7), Safi (4), Agadir (6), Mohammedia (10), Khouribga (9), Beni-Mellal (11), Témara (6), El Jadida (9), Nador (5), Ksar el Kebir (13), Settat (6), Taza (4), El Araich (9)
+*************************** 2. row ***************************
+     CountryCode: MEX
+CitiesWithLength: Ciudad de México (16), Guadalajara (11), Ecatepec de Morelos (19), Puebla (6), Nezahualcóyotl (14), Juárez (6), Tijuana (7), León (4), Monterrey (9), Zapopan (7), Naucalpan de Juárez (19), Mexicali (8), Culiacán (8), Acapulco de Juárez (18), Tlalnepantla de Baz (19), Mérida (6), Chihuahua (9), San Luis Potosí (15), Guadalupe (9), Toluca (6), Aguascalientes (14), Querétaro (9), Morelia (7), Hermosillo (10), Saltillo (8), Torreón (7), Centro (Villahermosa) (21), San Nicolás de los Garza (24), Durango (7), Chimalhuacán (12), Tlaquepaque (11), Atizapán de Zaragoza (20), Veracruz (8), Cuautitlán Izcalli (18), Irapuato (8), Tuxtla Gutiérrez (16), Tultitlán (9), Reynosa (7), Benito Juárez (13), Matamoros (9), Xalapa (6), Celaya (6), Mazatlán (8), Ensenada (8), Ahome (5), Cajeme (6), Cuernavaca (10), Tonalá (6), Valle de Chalco Solidaridad (27), Nuevo Laredo (12), Tepic (5), Tampico (7), Ixtapaluca (10), Apodaca (7), Guasave (7), Gómez Palacio (13), Tapachula (9), Nicolás Romero (14), Coatzacoal
+*************************** 3. row ***************************
+     CountryCode: MMR
+CitiesWithLength: Rangoon (Yangon) (16), Mandalay (8), Moulmein (Mawlamyine) (21), Pegu (Bago) (11), Bassein (Pathein) (17), Monywa (6), Sittwe (Akyab) (14), Taunggyi (Taunggye) (19), Meikhtila (9), Mergui (Myeik) (14), Lashio (Lasho) (14), Prome (Pyay) (12), Henzada (Hinthada) (18), Myingyan (8), Tavoy (Dawei) (13), Pagakku (Pakokku) (17)
+*************************** 4. row ***************************
+     CountryCode: MOZ
+CitiesWithLength: Maputo (6), Matola (6), Beira (5), Nampula (7), Chimoio (7), Naçala-Porto (12), Quelimane (9), Mocuba (6), Tete (4), Xai-Xai (7), Gurue (5), Maxixe (6)
+*************************** 5. row ***************************
+     CountryCode: MYS
+CitiesWithLength: Kuala Lumpur (12), Ipoh (4), Johor Baharu (12), Petaling Jaya (13), Kelang (6), Kuala Terengganu (16), Pinang (6), Kota Bharu (10), Kuantan (7), Taiping (7), Seremban (8), Kuching (7), Sibu (4), Sandakan (8), Alor Setar (10), Selayang Baru (13), Sungai Petani (13), Shah Alam (9)
+5 rows in set, 1 warning (0.00 sec)
+
+(world) mysql> notee
