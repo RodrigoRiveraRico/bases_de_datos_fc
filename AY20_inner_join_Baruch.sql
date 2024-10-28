@@ -122,12 +122,59 @@ ORDER BY 2
 -- Esta consulta une `country` y `countrylanguage` y agrupa los idiomas de cada país, calculando el total de idiomas registrados por país.
 -- Nótese que no hubo necesidad de indicar en SELECT, ON o GROUP BY el nombre de la tabla de las respectivas columnas pues todo el QUERY está libre de ambigüedades.
 
+-- Ejemplo 8 (JOIN con subconsulta)
+/*
+Queremos agrupar las ciudades por país y obtener la población mínima de cada país.
+*/
+SELECT CountryCode, MIN(Population) AS MinCityPopulation
+FROM city
+GROUP BY CountryCode
+;
+/* 
+Obtener a su vez el nombre de la ciudad con la población mínima de cada país.
+*/
+SELECT 
+    T.CountryCode,
+    T.MinCityPopulation AS Population,
+    city.Name AS CityName
+FROM
+    (SELECT 
+        CountryCode, MIN(Population) AS MinCityPopulation
+    FROM
+        city
+    GROUP BY CountryCode) AS T
+JOIN
+    city ON T.CountryCode = city.CountryCode AND T.MinCityPopulation = city.Population
+;
+-- La primera consulta del ejemplo muestra 232 rows, la segunda consulta muestra 235 rows.
+-- ¿Esperarías ese resultado?
+-- Mediante subconsultas (a partir de los QUERIES del ejemplo), ¿podrías identificar los 3 rows extras?
+/*
+Respuesta: El siguiente QUERY muestra los países que tienen más de una ciudad que coinciden en MIN(Population).
+*/
+SELECT 
+    B.CountryCode, COUNT(*)
+FROM
+    (SELECT 
+        T.CountryCode,
+        T.MinCityPopulation AS Population,
+        city.Name AS CityName
+    FROM
+        (SELECT 
+            CountryCode, MIN(Population) AS MinCityPopulation
+        FROM
+            city
+        GROUP BY CountryCode) AS T
+    JOIN city ON T.CountryCode = city.CountryCode AND T.MinCityPopulation = city.Population) AS B
+GROUP BY B.CountryCode
+HAVING COUNT(*) > 1
+;
 
-
--- Ejemplo ? (JOIN y subconsultas)
+-- Ejemplo 9 (JOIN y subconsultas)
 /*
 Queremos mostrar el nombre del país, su continente y las ciudades que lo componen en un arreglo JSON
 de los países que cuenten con exactamente 1 idioma registrado.
+Muestre el resultado verticalmente.
 */
 SELECT 
     CountryName, Continent, JSON_ARRAYAGG(CityName) AS 'CityArray'
@@ -149,22 +196,65 @@ FROM
 GROUP BY Code
 \G
 
-
-
-
--- Ejemplo ? (JOIN y subconsultas)
+-- Ejemplo 10 (JOIN y subconsultas)
 /*
-Queremos mostrar el nombre del país, su continente, las ciudades que lo componen y generar un objeto JSON tal que
+Queremos mostrar el nombre del país, su continente, las ciudades que lo componen en un arreglo JSON y generar un objeto JSON tal que
 las llaves sean el idioma y los valores la indicación de si el idioma es oficial 'T' o no lo es 'F' tal como se indica en la columna `IsOfficial`
 de los países que cuenten con exactamente 4 idiomas registrados como oficiales.
+Muestra el resultado verticalmente.
 */
-SELECT B.Name AS CountryName, B.Continent, C.Name AS CityName, D.JSON_OBB as E
+SELECT B.Name AS CountryName, B.Continent, JSON_ARRAYAGG(C.Name) AS CityArray, D.JSON_OBB as E
 FROM (select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4) as A
 JOIN country AS B ON A.CountryCode = B.Code 
 JOIN city AS C ON A.CountryCode = C.CountryCode
 JOIN (select CountryCode, JSON_OBJECTAGG(Language, IsOfficial) AS JSON_OBB from countrylanguage where CountryCode in (select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4) group by CountryCode) as D
 ON A.CountryCode = D.CountryCode
+group by B.Code
 \G
+
+-- --------
+SELECT 
+    B.Name AS CountryName,
+    B.Continent,
+    JSON_ARRAYAGG(C.Name) AS CityArray,
+    D.JSON_OBB AS E
+FROM
+    (SELECT 
+        CountryCode
+    FROM
+        countrylanguage
+    WHERE
+        isofficial = 'T'
+    GROUP BY 1
+    HAVING COUNT(*) = 4) AS A
+        JOIN
+    country AS B ON A.CountryCode = B.Code
+        JOIN
+    city AS C ON A.CountryCode = C.CountryCode
+        JOIN
+    (SELECT 
+        CountryCode,
+            JSON_OBJECTAGG(Language, IsOfficial) AS JSON_OBB
+    FROM
+        countrylanguage
+    WHERE
+        CountryCode IN (SELECT 
+                CountryCode
+            FROM
+                countrylanguage
+            WHERE
+                isofficial = 'T'
+            GROUP BY 1
+            HAVING COUNT(*) = 4)
+    GROUP BY CountryCode) AS D ON A.CountryCode = D.CountryCode
+GROUP BY B.Code
+
+
+-- ---
+
+
+
+
 
 select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4;
 -- che y zaf
