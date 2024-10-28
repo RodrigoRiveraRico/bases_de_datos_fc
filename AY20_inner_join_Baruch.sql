@@ -1,6 +1,6 @@
 /*
 =================================
-Ayudantía 20: Group By
+Ayudantía 20: INNER JOIN
 Rodrigo Baruch Rivera Rico
 29 octubre 2024
 =================================
@@ -95,7 +95,81 @@ WHERE city.CountryCode = 'JAM'
 ;
 -- Aquí NATURAL JOIN encuentra automáticamente la columna en común `CountryCode`.
 
+-- Ejemplo 6 (JOIN con múltiples tablas)
+/*
+Tomando el QUERY del ejemplo 5 uniremos `country`, `city` y `countrylanguage` 
+para mostrar el nombe del país, su continente y las combinaciones entre ciudades e idiomas del país en cuestión (el cual es Jamaica).
+*/
+SELECT ciudad.CountryCode, pais.Name AS CountryName, pais.Continent, ciudad.Name AS CityName, idioma.Language
+FROM city AS ciudad
+NATURAL JOIN countrylanguage AS idioma
+JOIN country AS pais ON ciudad.CountryCode = pais.Code
+WHERE ciudad.CountryCode = 'JAM'
+;
+-- Notemos que hemos etiquetado a la tabla `country` como `pais`, a la tabla `city` como `ciudad` y a la tabla `countrylanguage` como `idioma`.
+-- Estas etiquetas son utilizadas en las cláusulas ON, WHERE y SELECT.
 
+-- Ejemplo 7 (JOIN con función de agregación)
+/*
+Queremos obtener el nombre del país y el total de idiomas registrados.
+*/
+SELECT Name AS CountryName, COUNT(Language) AS TotalLanguage
+FROM country
+INNER JOIN countrylanguage ON Code = CountryCode
+GROUP BY Code
+ORDER BY 2
+;
+-- Esta consulta une `country` y `countrylanguage` y agrupa los idiomas de cada país, calculando el total de idiomas registrados por país.
+-- Nótese que no hubo necesidad de indicar en SELECT, ON o GROUP BY el nombre de la tabla de las respectivas columnas pues todo el QUERY está libre de ambigüedades.
+
+
+
+-- Ejemplo ? (JOIN y subconsultas)
+/*
+Queremos mostrar el nombre del país, su continente y las ciudades que lo componen en un arreglo JSON
+de los países que cuenten con exactamente 1 idioma registrado.
+*/
+SELECT 
+    CountryName, Continent, JSON_ARRAYAGG(CityName) AS 'CityArray'
+FROM
+    (SELECT 
+        B.Code,
+        B.Name AS CountryName,
+        B.Continent,
+        C.Name AS CityName
+    FROM
+        (SELECT 
+            CountryCode
+        FROM
+            countrylanguage
+        GROUP BY 1
+        HAVING COUNT(*) = 1) AS A
+    JOIN country AS B ON A.CountryCode = B.Code
+    JOIN city AS C ON A.CountryCode = C.CountryCode) AS D
+GROUP BY Code
+\G
+
+
+
+
+-- Ejemplo ? (JOIN y subconsultas)
+/*
+Queremos mostrar el nombre del país, su continente, las ciudades que lo componen y generar un objeto JSON tal que
+las llaves sean el idioma y los valores la indicación de si el idioma es oficial 'T' o no lo es 'F' tal como se indica en la columna `IsOfficial`
+de los países que cuenten con exactamente 4 idiomas registrados como oficiales.
+*/
+SELECT B.Name AS CountryName, B.Continent, C.Name AS CityName, D.JSON_OBB as E
+FROM (select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4) as A
+JOIN country AS B ON A.CountryCode = B.Code 
+JOIN city AS C ON A.CountryCode = C.CountryCode
+JOIN (select CountryCode, JSON_OBJECTAGG(Language, IsOfficial) AS JSON_OBB from countrylanguage where CountryCode in (select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4) group by CountryCode) as D
+ON A.CountryCode = D.CountryCode
+\G
+
+select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4;
+-- che y zaf
+
+select CountryCode, JSON_OBJECTAGG(Language, IsOfficial) from countrylanguage where CountryCode in (select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4) group by CountryCode;
 
 /*
 Queremos mostrar los idiomas de cada país:
@@ -125,3 +199,9 @@ select left(name,1), count(*)
 from country
 group by left(name,1)
 order by 1;
+
+select CountryCode /*, count(*) */ from countrylanguage where isofficial='T' group by 1 having count(*)=4;
+
+select CountryCode, count(*) from countrylanguage group by 1 having count(*)=1;
+
+select CountryCode, count(*) from countrylanguage group by 1 having count(*)=1 order by 2;
