@@ -113,7 +113,7 @@ WHERE ciudad.CountryCode = 'JAM'
 -- Ejemplo 7 (JOIN)
 /*
 Queremos mostrar los idiomas de cada país:
-Nos interesa saber tanto el país como los idiomas que se hablan en dicho país considerando solo los países que empiezan P.
+Nos interesa saber tanto el país como los idiomas que se hablan en dicho país considerando solo los países que empiezan con P.
 */
 SELECT pais.Name AS CountryName, idioma.Language
 FROM country AS pais
@@ -146,14 +146,14 @@ ORDER BY 2
 
 -- Ejemplo 10 (JOIN con subconsulta)
 /*
-Queremos agrupar las ciudades por país y obtener la población mínima de cada país.
+Primero agrupamos las ciudades por país y obtenemos la población mínima de cada país.
 */
 SELECT CountryCode, MIN(Population) AS MinCityPopulation
 FROM city
 GROUP BY CountryCode
 ;
 /* 
-Obtener a su vez el nombre de la ciudad con la población mínima de cada país.
+Ahora obtenemos a su vez el nombre de la ciudad con la población mínima de cada país.
 */
 SELECT 
     T.CountryCode,
