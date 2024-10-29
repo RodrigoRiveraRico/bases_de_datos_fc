@@ -20,6 +20,7 @@ Metadata:
 -> La tabla `country` tiene registros de países. La columna `Code` es llave primaria que indica el código del país y a esta columna se hace referencia en las tablas `city` y `countrylanguage`.
 -> La tabla `city` tiene registros de ciudades con una llave foránea `CountryCode` que indica el país al que pertenecen.
 -> La tabla `countrylanguage` tiene registros de los idiomas hablados en cada país. La llave foránea `CountryCode` hace referencia al país en cuestión.
+-> La columna `Capital` en la tabla `country` se relaciona con la columna `ID` de la tabla `city` para obetener la capital de cada país.
 */
 
 -- IMPORTANTE -- 
@@ -109,7 +110,28 @@ WHERE ciudad.CountryCode = 'JAM'
 -- Notemos que hemos etiquetado a la tabla `country` como `pais`, a la tabla `city` como `ciudad` y a la tabla `countrylanguage` como `idioma`.
 -- Estas etiquetas son utilizadas en las cláusulas ON, WHERE y SELECT.
 
--- Ejemplo 7 (JOIN con función de agregación)
+-- Ejemplo 7 (JOIN)
+/*
+Queremos mostrar los idiomas de cada país:
+Nos interesa saber tanto el país como los idiomas que se hablan en dicho país considerando solo los países que empiezan P.
+*/
+SELECT pais.Name AS CountryName, idioma.Language
+FROM country AS pais
+JOIN countrylanguage AS idioma ON pais.Code = idioma.CountryCode
+WHERE pais.Name like 'P%'
+;
+
+-- Ejemplo 8 (JOIN)
+/*
+Queremos mostrar las capitales de cada país:
+Nos interesa saber el nombre tanto de la capital como del país, así como de la población hay en cada capital.
+*/
+SELECT pais.Name AS CountryName, ciudad.Name AS CityName, ciudad.Population
+FROM country AS pais
+JOIN city AS ciudad ON pais.Capital = ciudad.ID
+;
+
+-- Ejemplo 9 (JOIN con función de agregación)
 /*
 Queremos obtener el nombre del país y el total de idiomas registrados.
 */
@@ -122,7 +144,7 @@ ORDER BY 2
 -- Esta consulta une `country` y `countrylanguage` y agrupa los idiomas de cada país, calculando el total de idiomas registrados por país.
 -- Nótese que no hubo necesidad de indicar en SELECT, ON o GROUP BY el nombre de la tabla de las respectivas columnas pues todo el QUERY está libre de ambigüedades.
 
--- Ejemplo 8 (JOIN con subconsulta)
+-- Ejemplo 10 (JOIN con subconsulta)
 /*
 Queremos agrupar las ciudades por país y obtener la población mínima de cada país.
 */
@@ -170,7 +192,7 @@ GROUP BY B.CountryCode
 HAVING COUNT(*) > 1
 ;
 
--- Ejemplo 9 (JOIN y subconsultas)
+-- Ejemplo 11 (JOIN y subconsultas)
 /*
 Queremos mostrar el nombre del país, su continente y las ciudades que lo componen en un arreglo JSON
 de los países que cuenten con exactamente 1 idioma registrado.
@@ -196,7 +218,7 @@ FROM
 GROUP BY Code
 \G
 
--- Ejemplo 10 (JOIN y subconsultas)
+-- Ejemplo 12 (JOIN y subconsultas)
 /*
 Queremos mostrar el nombre del país, su continente, las ciudades que lo componen en un arreglo JSON y generar un objeto JSON tal que
 las llaves sean el idioma y los valores la indicación de si el idioma es oficial 'T' o no lo es 'F', tal como se indica en la columna `IsOfficial`,
@@ -239,47 +261,3 @@ JOIN
     GROUP BY CountryCode) AS D ON A.CountryCode = D.CountryCode
 GROUP BY B.Code
 \G
-
-
-
-
-
-select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4;
--- che y zaf
-
-select CountryCode, JSON_OBJECTAGG(Language, IsOfficial) from countrylanguage where CountryCode in (select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4) group by CountryCode;
-
-/*
-Queremos mostrar los idiomas de cada país:
-Nos interesa saber tanto el país como los idiomas que se hablan en dicho país considerando solo los países que empiezan P.
-*/
-SELECT pais.Name AS CountryName, idioma.Language
-FROM country AS pais
-JOIN countrylanguage AS idioma ON pais.Code = idioma.CountryCode
-WHERE pais.Name like 'P%'
-;
--- Notemos que hemos etiquetado a la tabla `country` como `pais` y a la tabla `countrylanguage` como `idioma`.
--- Estas etiquetas son utilizadas en las cláusulas ON, WHERE y SELECT.
--- Aquí JOIN se usa para unir `country` y `countrylanguage` en función de que el código del país coincida. 
--- Se devuelve solo información para aquellos países que tienen datos en ambas tablas.
-
-
-
-
-select left(name,1), count(*)
-from city
-group by left(name,1)
-order by 1;
-
-select CountryCode, count(*) from countrylanguage group by 1  order by 2;
-
-select left(name,1), count(*)
-from country
-group by left(name,1)
-order by 1;
-
-select CountryCode /*, count(*) */ from countrylanguage where isofficial='T' group by 1 having count(*)=4;
-
-select CountryCode, count(*) from countrylanguage group by 1 having count(*)=1;
-
-select CountryCode, count(*) from countrylanguage group by 1 having count(*)=1 order by 2;
