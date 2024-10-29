@@ -199,25 +199,15 @@ GROUP BY Code
 -- Ejemplo 10 (JOIN y subconsultas)
 /*
 Queremos mostrar el nombre del país, su continente, las ciudades que lo componen en un arreglo JSON y generar un objeto JSON tal que
-las llaves sean el idioma y los valores la indicación de si el idioma es oficial 'T' o no lo es 'F' tal como se indica en la columna `IsOfficial`
+las llaves sean el idioma y los valores la indicación de si el idioma es oficial 'T' o no lo es 'F', tal como se indica en la columna `IsOfficial`,
 de los países que cuenten con exactamente 4 idiomas registrados como oficiales.
 Muestra el resultado verticalmente.
 */
-SELECT B.Name AS CountryName, B.Continent, JSON_ARRAYAGG(C.Name) AS CityArray, D.JSON_OBB as E
-FROM (select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4) as A
-JOIN country AS B ON A.CountryCode = B.Code 
-JOIN city AS C ON A.CountryCode = C.CountryCode
-JOIN (select CountryCode, JSON_OBJECTAGG(Language, IsOfficial) AS JSON_OBB from countrylanguage where CountryCode in (select CountryCode from countrylanguage where isofficial='T' group by 1 having count(*)=4) group by CountryCode) as D
-ON A.CountryCode = D.CountryCode
-group by B.Code
-\G
-
--- --------
 SELECT 
     B.Name AS CountryName,
     B.Continent,
     JSON_ARRAYAGG(C.Name) AS CityArray,
-    D.JSON_OBB AS E
+    D.LanguageObject
 FROM
     (SELECT 
         CountryCode
@@ -227,30 +217,28 @@ FROM
         isofficial = 'T'
     GROUP BY 1
     HAVING COUNT(*) = 4) AS A
-        JOIN
+JOIN
     country AS B ON A.CountryCode = B.Code
-        JOIN
+JOIN
     city AS C ON A.CountryCode = C.CountryCode
-        JOIN
+JOIN
     (SELECT 
         CountryCode,
-            JSON_OBJECTAGG(Language, IsOfficial) AS JSON_OBB
+        JSON_OBJECTAGG(Language, IsOfficial) AS LanguageObject
     FROM
         countrylanguage
     WHERE
         CountryCode IN (SELECT 
-                CountryCode
-            FROM
-                countrylanguage
-            WHERE
-                isofficial = 'T'
-            GROUP BY 1
-            HAVING COUNT(*) = 4)
+                            CountryCode 
+                        FROM 
+                            countrylanguage 
+                        WHERE 
+                            isofficial = 'T' 
+                        GROUP BY 1 
+                        HAVING COUNT(*) = 4)
     GROUP BY CountryCode) AS D ON A.CountryCode = D.CountryCode
 GROUP BY B.Code
-
-
--- ---
+\G
 
 
 
