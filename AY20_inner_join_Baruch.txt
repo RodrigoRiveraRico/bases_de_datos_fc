@@ -1,0 +1,1484 @@
+(world) mysql> /*
+   /*> =================================
+   /*> Ayudantía 20: INNER JOIN
+   /*> Rodrigo Baruch Rivera Rico
+   /*> 29 octubre 2024
+   /*> =================================
+   /*> */
+(world) mysql> 
+(world) mysql> -- Antes de empezar: cargar la base world y ponerla en uso
+(world) mysql> -- \. path\to\script\base_world.sql
+(world) mysql> -- \u world
+(world) mysql> 
+(world) mysql> /*
+   /*> Recordemos que:
+   /*> La cláusula JOIN se utiliza para combinar filas de dos o más tablas, basándose en una columna relacionada entre ellas.
+   /*> */
+(world) mysql> 
+(world) mysql> /*
+   /*> Metadata:
+   /*> -> La tabla `country` tiene registros de países. La columna `Code` es llave primaria que indica el código del país y a esta columna se hace referencia en las tablas `city` y `countrylanguage`.
+   /*> -> La tabla `city` tiene registros de ciudades con una llave foránea `CountryCode` que indica el país al que pertenecen.
+   /*> -> La tabla `countrylanguage` tiene registros de los idiomas hablados en cada país. La llave foránea `CountryCode` hace referencia al país en cuestión.
+   /*> -> La columna `Capital` en la tabla `country` se relaciona con la columna `ID` de la tabla `city` para obetener la capital de cada país.
+   /*> */
+(world) mysql> 
+(world) mysql> -- IMPORTANTE -- 
+(world) mysql> /*
+   /*> En MySQL, JOIN e INNER JOIN son equivalentes sintácticos (pueden sustituirse entre sí).
+   /*> En SQL estándar, no son equivalentes.
+   /*> En general, los paréntesis pueden ignorarse en expresiones join que sólo contengan operaciones inner join.
+   /*> 
+   /*> Con inner join se pueden usar indistintamente las cláusulas ON y USING.
+   /*> Lo anterior no es cierto para outer join.
+   /*> (https://dev.mysql.com/doc/refman/8.4/en/join.html)
+   /*> */
+(world) mysql> 
+(world) mysql> -- Ejemplo 1 (INNER JOIN)
+(world) mysql> /*
+   /*> Queremos obtener información sobre países y sus ciudades:
+   /*> Nos interesa saber tanto el nombre del país como el de sus ciudades considerando solo las ciudades que empiezan con X.
+   /*> */
+(world) mysql> SELECT country.Name AS CountryName, city.Name AS CityName
+    -> FROM country
+    -> INNER JOIN city ON country.Code = city.CountryCode
+    -> WHERE city.Name like 'X%'
+    -> ;
++-------------+-----------+
+| CountryName | CityName  |
++-------------+-----------+
+| China       | Xi´an     |
+| China       | Xuzhou    |
+| China       | Xining    |
+| China       | Xinxiang  |
+| China       | Xiangtan  |
+| China       | Xiangfan  |
+| China       | Xianyang  |
+| China       | Xingtai   |
+| China       | Xintai    |
+| China       | Xiantao   |
+| China       | Xuchang   |
+| China       | Xinyang   |
+| China       | Xinyu     |
+| China       | Xiaogan   |
+| China       | Xiaoshan  |
+| China       | Xinghua   |
+| China       | Xianning  |
+| China       | Xichang   |
+| China       | Xuangzhou |
+| China       | Xingcheng |
+| China       | Xinzhou   |
+| China       | Xilin Hot |
+| Mexico      | Xalapa    |
+| Mozambique  | Xai-Xai   |
++-------------+-----------+
+24 rows in set (0.01 sec)
+
+(world) mysql> -- Notemos que tanto en la tabla `country` como en `city` hay una columna que se llama igual en ambas: `Name`.
+(world) mysql> -- Para evitar ambigüedades se hace referencia al nombre de la tabla que se usará.
+(world) mysql> -- Se realiza un INNER JOIN entre `country` y `city` usando la columna `Code` de `country` y `CountryCode` de `city` como condición de coincidencia.
+(world) mysql> -- Esto devuelve solo las combinaciones donde hay una correspondencia en ambas tablas.
+(world) mysql> 
+(world) mysql> -- Ejemplo 2 (JOIN <-- equivalente a INNER JOIN)
+(world) mysql> /*
+   /*> Modificar el QUERY anterior con JOIN.
+   /*> */
+(world) mysql> SELECT country.Name AS CountryName, city.Name AS CityName
+    -> FROM country
+    -> JOIN city ON country.Code = city.CountryCode
+    -> WHERE city.Name like 'X%'
+    -> ;
++-------------+-----------+
+| CountryName | CityName  |
++-------------+-----------+
+| China       | Xi´an     |
+| China       | Xuzhou    |
+| China       | Xining    |
+| China       | Xinxiang  |
+| China       | Xiangtan  |
+| China       | Xiangfan  |
+| China       | Xianyang  |
+| China       | Xingtai   |
+| China       | Xintai    |
+| China       | Xiantao   |
+| China       | Xuchang   |
+| China       | Xinyang   |
+| China       | Xinyu     |
+| China       | Xiaogan   |
+| China       | Xiaoshan  |
+| China       | Xinghua   |
+| China       | Xianning  |
+| China       | Xichang   |
+| China       | Xuangzhou |
+| China       | Xingcheng |
+| China       | Xinzhou   |
+| China       | Xilin Hot |
+| Mexico      | Xalapa    |
+| Mozambique  | Xai-Xai   |
++-------------+-----------+
+24 rows in set (0.00 sec)
+
+(world) mysql> -- Dado que estamos usando MySQL, pudemos cambiar JOIN por INNER JOIN en el QUERY y obtener el mismo resultado.
+(world) mysql> 
+(world) mysql> -- Ejemplo 3 (JOIN)
+(world) mysql> /*
+   /*> Queremos obtener las combinaciones entre ciudades e idiomas:
+   /*> Nos interesa la combinación de Jamaica, país cuyo código es 'JAM'.
+   /*> */
+(world) mysql> SELECT city.CountryCode, city.Name AS CityName, countrylanguage.Language
+    -> FROM city
+    -> JOIN countrylanguage ON city.CountryCode = countrylanguage.CountryCode
+    -> WHERE city.CountryCode = 'JAM'
+    -> ;
++-------------+--------------+----------------+
+| CountryCode | CityName     | Language       |
++-------------+--------------+----------------+
+| JAM         | Spanish Town | Creole English |
+| JAM         | Spanish Town | Hindi          |
+| JAM         | Kingston     | Creole English |
+| JAM         | Kingston     | Hindi          |
+| JAM         | Portmore     | Creole English |
+| JAM         | Portmore     | Hindi          |
++-------------+--------------+----------------+
+6 rows in set (0.00 sec)
+
+(world) mysql> -- El QUERY anterior devuelve las combinaciones donde hay una correspondencia en ambas tablas mediante la columna en común `CountryCode`.
+(world) mysql> -- Nótese que se puede usar indistintamente `city.CountryCode` y `countrylanguage.CountryCode` en el SELECT.
+(world) mysql> 
+(world) mysql> -- Ejemplo 4 (JOIN ... USING)
+(world) mysql> /*
+   /*> Modificar el QUERY anterior con USING.
+   /*> */
+(world) mysql> SELECT city.CountryCode, city.Name AS CityName, countrylanguage.Language
+    -> FROM city
+    -> JOIN countrylanguage USING (CountryCode)
+    -> WHERE city.CountryCode = 'JAM'
+    -> ;
++-------------+--------------+----------------+
+| CountryCode | CityName     | Language       |
++-------------+--------------+----------------+
+| JAM         | Spanish Town | Creole English |
+| JAM         | Spanish Town | Hindi          |
+| JAM         | Kingston     | Creole English |
+| JAM         | Kingston     | Hindi          |
+| JAM         | Portmore     | Creole English |
+| JAM         | Portmore     | Hindi          |
++-------------+--------------+----------------+
+6 rows in set (0.00 sec)
+
+(world) mysql> -- En USING se indica la columna en común `CountryCode`.
+(world) mysql> -- Nótese que el nombre de la columna en USING debe ser idéntico en ambas tablas.
+(world) mysql> 
+(world) mysql> -- Ejemplo 5 (NATURAL JOIN <-- equivalente a JOIN ... USING)
+(world) mysql> /*
+   /*> Modificar el QUERY anterior con NATURAL JOIN.
+   /*> */
+(world) mysql> SELECT city.CountryCode, city.Name AS CityName, countrylanguage.Language
+    -> FROM city
+    -> NATURAL JOIN countrylanguage
+    -> WHERE city.CountryCode = 'JAM'
+    -> ;
++-------------+--------------+----------------+
+| CountryCode | CityName     | Language       |
++-------------+--------------+----------------+
+| JAM         | Spanish Town | Creole English |
+| JAM         | Spanish Town | Hindi          |
+| JAM         | Kingston     | Creole English |
+| JAM         | Kingston     | Hindi          |
+| JAM         | Portmore     | Creole English |
+| JAM         | Portmore     | Hindi          |
++-------------+--------------+----------------+
+6 rows in set (0.00 sec)
+
+(world) mysql> -- Aquí NATURAL JOIN encuentra automáticamente la columna en común `CountryCode`.
+(world) mysql> 
+(world) mysql> -- Ejemplo 6 (JOIN con múltiples tablas)
+(world) mysql> /*
+   /*> Tomando el QUERY del ejemplo 5 uniremos `country`, `city` y `countrylanguage` 
+   /*> para mostrar el nombe del país, su continente y las combinaciones entre ciudades e idiomas del país en cuestión (el cual es Jamaica).
+   /*> */
+(world) mysql> SELECT ciudad.CountryCode, pais.Name AS CountryName, pais.Continent, ciudad.Name AS CityName, idioma.Language
+    -> FROM city AS ciudad
+    -> NATURAL JOIN countrylanguage AS idioma
+    -> JOIN country AS pais ON ciudad.CountryCode = pais.Code
+    -> WHERE ciudad.CountryCode = 'JAM'
+    -> ;
++-------------+-------------+---------------+--------------+----------------+
+| CountryCode | CountryName | Continent     | CityName     | Language       |
++-------------+-------------+---------------+--------------+----------------+
+| JAM         | Jamaica     | North America | Spanish Town | Creole English |
+| JAM         | Jamaica     | North America | Spanish Town | Hindi          |
+| JAM         | Jamaica     | North America | Kingston     | Creole English |
+| JAM         | Jamaica     | North America | Kingston     | Hindi          |
+| JAM         | Jamaica     | North America | Portmore     | Creole English |
+| JAM         | Jamaica     | North America | Portmore     | Hindi          |
++-------------+-------------+---------------+--------------+----------------+
+6 rows in set (0.00 sec)
+
+(world) mysql> -- Notemos que hemos etiquetado a la tabla `country` como `pais`, a la tabla `city` como `ciudad` y a la tabla `countrylanguage` como `idioma`.
+(world) mysql> -- Estas etiquetas son utilizadas en las cláusulas ON, WHERE y SELECT.
+(world) mysql> 
+(world) mysql> -- Ejemplo 7 (JOIN)
+(world) mysql> /*
+   /*> Queremos mostrar los idiomas de cada país:
+   /*> Nos interesa saber tanto el país como los idiomas que se hablan en dicho país considerando solo los países que empiezan P.
+   /*> */
+(world) mysql> SELECT pais.Name AS CountryName, idioma.Language
+    -> FROM country AS pais
+    -> JOIN countrylanguage AS idioma ON pais.Code = idioma.CountryCode
+    -> WHERE pais.Name like 'P%'
+    -> ;
++------------------+----------------------+
+| CountryName      | Language             |
++------------------+----------------------+
+| Pakistan         | Balochi              |
+| Pakistan         | Brahui               |
+| Pakistan         | Hindko               |
+| Pakistan         | Pashto               |
+| Pakistan         | Punjabi              |
+| Pakistan         | Saraiki              |
+| Pakistan         | Sindhi               |
+| Pakistan         | Urdu                 |
+| Panama           | Arabic               |
+| Panama           | Creole English       |
+| Panama           | Cuna                 |
+| Panama           | Embera               |
+| Panama           | Guaymí               |
+| Panama           | Spanish              |
+| Pitcairn         | Pitcairnese          |
+| Peru             | Aimará               |
+| Peru             | Ketšua               |
+| Peru             | Spanish              |
+| Philippines      | Bicol                |
+| Philippines      | Cebuano              |
+| Philippines      | Hiligaynon           |
+| Philippines      | Ilocano              |
+| Philippines      | Maguindanao          |
+| Philippines      | Maranao              |
+| Philippines      | Pampango             |
+| Philippines      | Pangasinan           |
+| Philippines      | Pilipino             |
+| Philippines      | Waray-waray          |
+| Palau            | Chinese              |
+| Palau            | English              |
+| Palau            | Palau                |
+| Palau            | Philippene Languages |
+| Papua New Guinea | Malenasian Languages |
+| Papua New Guinea | Papuan Languages     |
+| Poland           | Belorussian          |
+| Poland           | German               |
+| Poland           | Polish               |
+| Poland           | Ukrainian            |
+| Puerto Rico      | English              |
+| Puerto Rico      | Spanish              |
+| Portugal         | Portuguese           |
+| Paraguay         | German               |
+| Paraguay         | Guaraní              |
+| Paraguay         | Portuguese           |
+| Paraguay         | Spanish              |
+| Palestine        | Arabic               |
+| Palestine        | Hebrew               |
++------------------+----------------------+
+47 rows in set (0.00 sec)
+
+(world) mysql> 
+(world) mysql> -- Ejemplo 8 (JOIN)
+(world) mysql> /*
+   /*> Queremos mostrar las capitales de cada país:
+   /*> Nos interesa saber el nombre tanto de la capital como del país, así como de la población hay en cada capital.
+   /*> */
+(world) mysql> SELECT pais.Name AS CountryName, ciudad.Name AS CityName, ciudad.Population
+    -> FROM country AS pais
+    -> JOIN city AS ciudad ON pais.Capital = ciudad.ID
+    -> ;
++---------------------------------------+------------------------------------+------------+
+| CountryName                           | CityName                           | Population |
++---------------------------------------+------------------------------------+------------+
+| Aruba                                 | Oranjestad                         |      29034 |
+| Afghanistan                           | Kabul                              |    1780000 |
+| Angola                                | Luanda                             |    2022000 |
+| Anguilla                              | The Valley                         |        595 |
+| Albania                               | Tirana                             |     270000 |
+| Andorra                               | Andorra la Vella                   |      21189 |
+| Netherlands Antilles                  | Willemstad                         |       2345 |
+| United Arab Emirates                  | Abu Dhabi                          |     398695 |
+| Argentina                             | Buenos Aires                       |    2982146 |
+| Armenia                               | Yerevan                            |    1248700 |
+| American Samoa                        | Fagatogo                           |       2323 |
+| Antigua and Barbuda                   | Saint John´s                       |      24000 |
+| Australia                             | Canberra                           |     322723 |
+| Austria                               | Wien                               |    1608144 |
+| Azerbaijan                            | Baku                               |    1787800 |
+| Burundi                               | Bujumbura                          |     300000 |
+| Belgium                               | Bruxelles [Brussel]                |     133859 |
+| Benin                                 | Porto-Novo                         |     194000 |
+| Burkina Faso                          | Ouagadougou                        |     824000 |
+| Bangladesh                            | Dhaka                              |    3612850 |
+| Bulgaria                              | Sofija                             |    1122302 |
+| Bahrain                               | al-Manama                          |     148000 |
+| Bahamas                               | Nassau                             |     172000 |
+| Bosnia and Herzegovina                | Sarajevo                           |     360000 |
+| Belarus                               | Minsk                              |    1674000 |
+| Belize                                | Belmopan                           |       7105 |
+| Bermuda                               | Hamilton                           |       1200 |
+| Bolivia                               | La Paz                             |     758141 |
+| Brazil                                | Brasília                           |    1969868 |
+| Barbados                              | Bridgetown                         |       6070 |
+| Brunei                                | Bandar Seri Begawan                |      21484 |
+| Bhutan                                | Thimphu                            |      22000 |
+| Botswana                              | Gaborone                           |     213017 |
+| Central African Republic              | Bangui                             |     524000 |
+| Canada                                | Ottawa                             |     335277 |
+| Cocos (Keeling) Islands               | West Island                        |        167 |
+| Switzerland                           | Bern                               |     122700 |
+| Chile                                 | Santiago de Chile                  |    4703954 |
+| China                                 | Peking                             |    7472000 |
+| Côte d’Ivoire                         | Yamoussoukro                       |     130000 |
+| Cameroon                              | Yaoundé                            |    1372800 |
+| Congo, The Democratic Republic of the | Kinshasa                           |    5064000 |
+| Congo                                 | Brazzaville                        |     950000 |
+| Cook Islands                          | Avarua                             |      11900 |
+| Colombia                              | Santafé de Bogotá                  |    6260862 |
+| Comoros                               | Moroni                             |      36000 |
+| Cape Verde                            | Praia                              |      94800 |
+| Costa Rica                            | San José                           |     339131 |
+| Cuba                                  | La Habana                          |    2256000 |
+| Christmas Island                      | Flying Fish Cove                   |        700 |
+| Cayman Islands                        | George Town                        |      19600 |
+| Cyprus                                | Nicosia                            |     195000 |
+| Czech Republic                        | Praha                              |    1181126 |
+| Germany                               | Berlin                             |    3386667 |
+| Djibouti                              | Djibouti                           |     383000 |
+| Dominica                              | Roseau                             |      16243 |
+| Denmark                               | København                          |     495699 |
+| Dominican Republic                    | Santo Domingo de Guzmán            |    1609966 |
+| Algeria                               | Alger                              |    2168000 |
+| Ecuador                               | Quito                              |    1573458 |
+| Egypt                                 | Cairo                              |    6789479 |
+| Eritrea                               | Asmara                             |     431000 |
+| Western Sahara                        | El-Aaiún                           |     169000 |
+| Spain                                 | Madrid                             |    2879052 |
+| Estonia                               | Tallinn                            |     403981 |
+| Ethiopia                              | Addis Abeba                        |    2495000 |
+| Finland                               | Helsinki [Helsingfors]             |     555474 |
+| Fiji Islands                          | Suva                               |      77366 |
+| Falkland Islands                      | Stanley                            |       1636 |
+| France                                | Paris                              |    2125246 |
+| Faroe Islands                         | Tórshavn                           |      14542 |
+| Micronesia, Federated States of       | Palikir                            |       8600 |
+| Gabon                                 | Libreville                         |     419000 |
+| United Kingdom                        | London                             |    7285000 |
+| Georgia                               | Tbilisi                            |    1235200 |
+| Ghana                                 | Accra                              |    1070000 |
+| Gibraltar                             | Gibraltar                          |      27025 |
+| Guinea                                | Conakry                            |    1090610 |
+| Guadeloupe                            | Basse-Terre                        |      12433 |
+| Gambia                                | Banjul                             |      42326 |
+| Guinea-Bissau                         | Bissau                             |     241000 |
+| Equatorial Guinea                     | Malabo                             |      40000 |
+| Greece                                | Athenai                            |     772072 |
+| Grenada                               | Saint George´s                     |       4621 |
+| Greenland                             | Nuuk                               |      13445 |
+| Guatemala                             | Ciudad de Guatemala                |     823301 |
+| French Guiana                         | Cayenne                            |      50699 |
+| Guam                                  | Agaña                              |       1139 |
+| Guyana                                | Georgetown                         |     254000 |
+| Hong Kong                             | Victoria                           |    1312637 |
+| Honduras                              | Tegucigalpa                        |     813900 |
+| Croatia                               | Zagreb                             |     706770 |
+| Haiti                                 | Port-au-Prince                     |     884472 |
+| Hungary                               | Budapest                           |    1811552 |
+| Indonesia                             | Jakarta                            |    9604900 |
+| India                                 | New Delhi                          |     301297 |
+| Ireland                               | Dublin                             |     481854 |
+| Iran                                  | Teheran                            |    6758845 |
+| Iraq                                  | Baghdad                            |    4336000 |
+| Iceland                               | Reykjavík                          |     109184 |
+| Israel                                | Jerusalem                          |     633700 |
+| Italy                                 | Roma                               |    2643581 |
+| Jamaica                               | Kingston                           |     103962 |
+| Jordan                                | Amman                              |    1000000 |
+| Japan                                 | Tokyo                              |    7980230 |
+| Kazakstan                             | Astana                             |     311200 |
+| Kenya                                 | Nairobi                            |    2290000 |
+| Kyrgyzstan                            | Bishkek                            |     589400 |
+| Cambodia                              | Phnom Penh                         |     570155 |
+| Kiribati                              | Bairiki                            |       2226 |
+| Saint Kitts and Nevis                 | Basseterre                         |      11600 |
+| South Korea                           | Seoul                              |    9981619 |
+| Kuwait                                | Kuwait                             |      28859 |
+| Laos                                  | Vientiane                          |     531800 |
+| Lebanon                               | Beirut                             |    1100000 |
+| Liberia                               | Monrovia                           |     850000 |
+| Libyan Arab Jamahiriya                | Tripoli                            |    1682000 |
+| Saint Lucia                           | Castries                           |       2301 |
+| Liechtenstein                         | Vaduz                              |       5043 |
+| Sri Lanka                             | Colombo                            |     645000 |
+| Lesotho                               | Maseru                             |     297000 |
+| Lithuania                             | Vilnius                            |     577969 |
+| Luxembourg                            | Luxembourg [Luxemburg/Lëtzebuerg]  |      80700 |
+| Latvia                                | Riga                               |     764328 |
+| Macao                                 | Macao                              |     437500 |
+| Morocco                               | Rabat                              |     623457 |
+| Monaco                                | Monaco-Ville                       |       1234 |
+| Moldova                               | Chisinau                           |     719900 |
+| Madagascar                            | Antananarivo                       |     675669 |
+| Maldives                              | Male                               |      71000 |
+| Mexico                                | Ciudad de México                   |    8591309 |
+| Marshall Islands                      | Dalap-Uliga-Darrit                 |      28000 |
+| Macedonia                             | Skopje                             |     444299 |
+| Mali                                  | Bamako                             |     809552 |
+| Malta                                 | Valletta                           |       7073 |
+| Myanmar                               | Rangoon (Yangon)                   |    3361700 |
+| Mongolia                              | Ulan Bator                         |     773700 |
+| Northern Mariana Islands              | Garapan                            |       9200 |
+| Mozambique                            | Maputo                             |    1018938 |
+| Mauritania                            | Nouakchott                         |     667300 |
+| Montserrat                            | Plymouth                           |       2000 |
+| Martinique                            | Fort-de-France                     |      94050 |
+| Mauritius                             | Port-Louis                         |     138200 |
+| Malawi                                | Lilongwe                           |     435964 |
+| Malaysia                              | Kuala Lumpur                       |    1297526 |
+| Mayotte                               | Mamoutzou                          |      12000 |
+| Namibia                               | Windhoek                           |     169000 |
+| New Caledonia                         | Nouméa                             |      76293 |
+| Niger                                 | Niamey                             |     420000 |
+| Norfolk Island                        | Kingston                           |        800 |
+| Nigeria                               | Abuja                              |     350100 |
+| Nicaragua                             | Managua                            |     959000 |
+| Niue                                  | Alofi                              |        682 |
+| Netherlands                           | Amsterdam                          |     731200 |
+| Norway                                | Oslo                               |     508726 |
+| Nepal                                 | Kathmandu                          |     591835 |
+| Nauru                                 | Yaren                              |        559 |
+| New Zealand                           | Wellington                         |     166700 |
+| Oman                                  | Masqat                             |      51969 |
+| Pakistan                              | Islamabad                          |     524500 |
+| Panama                                | Ciudad de Panamá                   |     471373 |
+| Pitcairn                              | Adamstown                          |         42 |
+| Peru                                  | Lima                               |    6464693 |
+| Philippines                           | Manila                             |    1581082 |
+| Palau                                 | Koror                              |      12000 |
+| Papua New Guinea                      | Port Moresby                       |     247000 |
+| Poland                                | Warszawa                           |    1615369 |
+| Puerto Rico                           | San Juan                           |     434374 |
+| North Korea                           | Pyongyang                          |    2484000 |
+| Portugal                              | Lisboa                             |     563210 |
+| Paraguay                              | Asunción                           |     557776 |
+| Palestine                             | Gaza                               |     353632 |
+| French Polynesia                      | Papeete                            |      25553 |
+| Qatar                                 | Doha                               |     355000 |
+| Réunion                               | Saint-Denis                        |     131480 |
+| Romania                               | Bucuresti                          |    2016131 |
+| Russian Federation                    | Moscow                             |    8389200 |
+| Rwanda                                | Kigali                             |     286000 |
+| Saudi Arabia                          | Riyadh                             |    3324000 |
+| Sudan                                 | Khartum                            |     947483 |
+| Senegal                               | Dakar                              |     785071 |
+| Singapore                             | Singapore                          |    4017733 |
+| Saint Helena                          | Jamestown                          |       1500 |
+| Svalbard and Jan Mayen                | Longyearbyen                       |       1438 |
+| Solomon Islands                       | Honiara                            |      50100 |
+| Sierra Leone                          | Freetown                           |     850000 |
+| El Salvador                           | San Salvador                       |     415346 |
+| San Marino                            | San Marino                         |       2294 |
+| Somalia                               | Mogadishu                          |     997000 |
+| Saint Pierre and Miquelon             | Saint-Pierre                       |       5808 |
+| Sao Tome and Principe                 | São Tomé                           |      49541 |
+| Suriname                              | Paramaribo                         |     112000 |
+| Slovakia                              | Bratislava                         |     448292 |
+| Slovenia                              | Ljubljana                          |     270986 |
+| Sweden                                | Stockholm                          |     750348 |
+| Swaziland                             | Mbabane                            |      61000 |
+| Seychelles                            | Victoria                           |      41000 |
+| Syria                                 | Damascus                           |    1347000 |
+| Turks and Caicos Islands              | Cockburn Town                      |       4800 |
+| Chad                                  | N´Djaména                          |     530965 |
+| Togo                                  | Lomé                               |     375000 |
+| Thailand                              | Bangkok                            |    6320174 |
+| Tajikistan                            | Dushanbe                           |     524000 |
+| Tokelau                               | Fakaofo                            |        300 |
+| Turkmenistan                          | Ashgabat                           |     540600 |
+| East Timor                            | Dili                               |      47900 |
+| Tonga                                 | Nuku´alofa                         |      22400 |
+| Trinidad and Tobago                   | Port-of-Spain                      |      43396 |
+| Tunisia                               | Tunis                              |     690600 |
+| Turkey                                | Ankara                             |    3038159 |
+| Tuvalu                                | Funafuti                           |       4600 |
+| Taiwan                                | Taipei                             |    2641312 |
+| Tanzania                              | Dodoma                             |     189000 |
+| Uganda                                | Kampala                            |     890800 |
+| Ukraine                               | Kyiv                               |    2624000 |
+| Uruguay                               | Montevideo                         |    1236000 |
+| United States                         | Washington                         |     572059 |
+| Uzbekistan                            | Toskent                            |    2117500 |
+| Holy See (Vatican City State)         | Città del Vaticano                 |        455 |
+| Saint Vincent and the Grenadines      | Kingstown                          |      17100 |
+| Venezuela                             | Caracas                            |    1975294 |
+| Virgin Islands, British               | Road Town                          |       8000 |
+| Virgin Islands, U.S.                  | Charlotte Amalie                   |      13000 |
+| Vietnam                               | Hanoi                              |    1410000 |
+| Vanuatu                               | Port-Vila                          |      33700 |
+| Wallis and Futuna                     | Mata-Utu                           |       1137 |
+| Samoa                                 | Apia                               |      35900 |
+| Yemen                                 | Sanaa                              |     503600 |
+| Yugoslavia                            | Beograd                            |    1204000 |
+| South Africa                          | Pretoria                           |     658630 |
+| Zambia                                | Lusaka                             |    1317000 |
+| Zimbabwe                              | Harare                             |    1410000 |
++---------------------------------------+------------------------------------+------------+
+232 rows in set (0.00 sec)
+
+(world) mysql> 
+(world) mysql> -- Ejemplo 9 (JOIN con función de agregación)
+(world) mysql> /*
+   /*> Queremos obtener el nombre del país y el total de idiomas registrados.
+   /*> */
+(world) mysql> SELECT Name AS CountryName, COUNT(Language) AS TotalLanguage
+    -> FROM country
+    -> INNER JOIN countrylanguage ON Code = CountryCode
+    -> GROUP BY Code
+    -> ORDER BY 2
+    -> ;
++---------------------------------------+---------------+
+| CountryName                           | TotalLanguage |
++---------------------------------------+---------------+
+| Anguilla                              |             1 |
+| Bosnia and Herzegovina                |             1 |
+| Bermuda                               |             1 |
+| Cuba                                  |             1 |
+| Cayman Islands                        |             1 |
+| Western Sahara                        |             1 |
+| Falkland Islands                      |             1 |
+| Grenada                               |             1 |
+| Montserrat                            |             1 |
+| Norfolk Island                        |             1 |
+| Pitcairn                              |             1 |
+| Portugal                              |             1 |
+| Saudi Arabia                          |             1 |
+| Saint Helena                          |             1 |
+| San Marino                            |             1 |
+| Saint Pierre and Miquelon             |             1 |
+| Turks and Caicos Islands              |             1 |
+| United States Minor Outlying Islands  |             1 |
+| Uruguay                               |             1 |
+| Holy See (Vatican City State)         |             1 |
+| Virgin Islands, British               |             1 |
+| United Arab Emirates                  |             2 |
+| Armenia                               |             2 |
+| Antigua and Barbuda                   |             2 |
+| Bahrain                               |             2 |
+| Bahamas                               |             2 |
+| Barbados                              |             2 |
+| Cocos (Keeling) Islands               |             2 |
+| Cook Islands                          |             2 |
+| Cape Verde                            |             2 |
+| Christmas Island                      |             2 |
+| Cyprus                                |             2 |
+| Dominica                              |             2 |
+| Dominican Republic                    |             2 |
+| Algeria                               |             2 |
+| Ecuador                               |             2 |
+| Egypt                                 |             2 |
+| Fiji Islands                          |             2 |
+| Faroe Islands                         |             2 |
+| Gibraltar                             |             2 |
+| Guadeloupe                            |             2 |
+| Equatorial Guinea                     |             2 |
+| Greece                                |             2 |
+| Greenland                             |             2 |
+| French Guiana                         |             2 |
+| Croatia                               |             2 |
+| Haiti                                 |             2 |
+| Ireland                               |             2 |
+| Iceland                               |             2 |
+| Jamaica                               |             2 |
+| Kiribati                              |             2 |
+| Saint Kitts and Nevis                 |             2 |
+| South Korea                           |             2 |
+| Kuwait                                |             2 |
+| Libyan Arab Jamahiriya                |             2 |
+| Saint Lucia                           |             2 |
+| Morocco                               |             2 |
+| Madagascar                            |             2 |
+| Maldives                              |             2 |
+| Marshall Islands                      |             2 |
+| Malta                                 |             2 |
+| Martinique                            |             2 |
+| Niue                                  |             2 |
+| New Zealand                           |             2 |
+| Oman                                  |             2 |
+| Papua New Guinea                      |             2 |
+| Puerto Rico                           |             2 |
+| North Korea                           |             2 |
+| Palestine                             |             2 |
+| Qatar                                 |             2 |
+| Rwanda                                |             2 |
+| Svalbard and Jan Mayen                |             2 |
+| El Salvador                           |             2 |
+| Somalia                               |             2 |
+| Sao Tome and Principe                 |             2 |
+| Suriname                              |             2 |
+| Swaziland                             |             2 |
+| Syria                                 |             2 |
+| Tokelau                               |             2 |
+| East Timor                            |             2 |
+| Tonga                                 |             2 |
+| Saint Vincent and the Grenadines      |             2 |
+| Wallis and Futuna                     |             2 |
+| Yemen                                 |             2 |
+| Albania                               |             3 |
+| Netherlands Antilles                  |             3 |
+| Argentina                             |             3 |
+| American Samoa                        |             3 |
+| Burundi                               |             3 |
+| Bhutan                                |             3 |
+| Djibouti                              |             3 |
+| United Kingdom                        |             3 |
+| Guyana                                |             3 |
+| Israel                                |             3 |
+| Jordan                                |             3 |
+| Lebanon                               |             3 |
+| Liechtenstein                         |             3 |
+| Sri Lanka                             |             3 |
+| Lesotho                               |             3 |
+| Mayotte                               |             3 |
+| New Caledonia                         |             3 |
+| Peru                                  |             3 |
+| French Polynesia                      |             3 |
+| Singapore                             |             3 |
+| Solomon Islands                       |             3 |
+| Slovenia                              |             3 |
+| Seychelles                            |             3 |
+| Tajikistan                            |             3 |
+| Trinidad and Tobago                   |             3 |
+| Tunisia                               |             3 |
+| Turkey                                |             3 |
+| Tuvalu                                |             3 |
+| Venezuela                             |             3 |
+| Virgin Islands, U.S.                  |             3 |
+| Vanuatu                               |             3 |
+| Samoa                                 |             3 |
+| Aruba                                 |             4 |
+| Andorra                               |             4 |
+| Azerbaijan                            |             4 |
+| Bulgaria                              |             4 |
+| Belarus                               |             4 |
+| Belize                                |             4 |
+| Bolivia                               |             4 |
+| Brunei                                |             4 |
+| Switzerland                           |             4 |
+| Chile                                 |             4 |
+| Costa Rica                            |             4 |
+| Spain                                 |             4 |
+| Gabon                                 |             4 |
+| Honduras                              |             4 |
+| Cambodia                              |             4 |
+| Laos                                  |             4 |
+| Macao                                 |             4 |
+| Monaco                                |             4 |
+| Malawi                                |             4 |
+| Nicaragua                             |             4 |
+| Netherlands                           |             4 |
+| Palau                                 |             4 |
+| Poland                                |             4 |
+| Paraguay                              |             4 |
+| Turkmenistan                          |             4 |
+| Zimbabwe                              |             4 |
+| Afghanistan                           |             5 |
+| Brazil                                |             5 |
+| Botswana                              |             5 |
+| Côte d’Ivoire                         |             5 |
+| Colombia                              |             5 |
+| Comoros                               |             5 |
+| Estonia                               |             5 |
+| Finland                               |             5 |
+| Gambia                                |             5 |
+| Guatemala                             |             5 |
+| Guam                                  |             5 |
+| Hong Kong                             |             5 |
+| Iraq                                  |             5 |
+| Lithuania                             |             5 |
+| Luxembourg                            |             5 |
+| Moldova                               |             5 |
+| Macedonia                             |             5 |
+| Niger                                 |             5 |
+| Norway                                |             5 |
+| Nauru                                 |             5 |
+| Réunion                               |             5 |
+| Slovakia                              |             5 |
+| Belgium                               |             6 |
+| Burkina Faso                          |             6 |
+| Central African Republic              |             6 |
+| Congo                                 |             6 |
+| Germany                               |             6 |
+| Eritrea                               |             6 |
+| France                                |             6 |
+| Micronesia, Federated States of       |             6 |
+| Georgia                               |             6 |
+| Ghana                                 |             6 |
+| Guinea-Bissau                         |             6 |
+| Hungary                               |             6 |
+| Japan                                 |             6 |
+| Kazakstan                             |             6 |
+| Latvia                                |             6 |
+| Mexico                                |             6 |
+| Mali                                  |             6 |
+| Mongolia                              |             6 |
+| Northern Mariana Islands              |             6 |
+| Mauritania                            |             6 |
+| Mauritius                             |             6 |
+| Malaysia                              |             6 |
+| Panama                                |             6 |
+| Romania                               |             6 |
+| Senegal                               |             6 |
+| Sweden                                |             6 |
+| Thailand                              |             6 |
+| Taiwan                                |             6 |
+| Uzbekistan                            |             6 |
+| Yugoslavia                            |             6 |
+| Zambia                                |             6 |
+| Benin                                 |             7 |
+| Bangladesh                            |             7 |
+| Denmark                               |             7 |
+| Ethiopia                              |             7 |
+| Guinea                                |             7 |
+| Kyrgyzstan                            |             7 |
+| Nepal                                 |             7 |
+| Ukraine                               |             7 |
+| Australia                             |             8 |
+| Austria                               |             8 |
+| Cameroon                              |             8 |
+| Czech Republic                        |             8 |
+| Italy                                 |             8 |
+| Liberia                               |             8 |
+| Myanmar                               |             8 |
+| Namibia                               |             8 |
+| Pakistan                              |             8 |
+| Sierra Leone                          |             8 |
+| Chad                                  |             8 |
+| Togo                                  |             8 |
+| Angola                                |             9 |
+| Indonesia                             |             9 |
+| Vietnam                               |             9 |
+| Congo, The Democratic Republic of the |            10 |
+| Iran                                  |            10 |
+| Kenya                                 |            10 |
+| Mozambique                            |            10 |
+| Nigeria                               |            10 |
+| Philippines                           |            10 |
+| Sudan                                 |            10 |
+| Uganda                                |            10 |
+| Tanzania                              |            11 |
+| South Africa                          |            11 |
+| Canada                                |            12 |
+| China                                 |            12 |
+| India                                 |            12 |
+| Russian Federation                    |            12 |
+| United States                         |            12 |
++---------------------------------------+---------------+
+233 rows in set (0.00 sec)
+
+(world) mysql> -- Esta consulta une `country` y `countrylanguage` y agrupa los idiomas de cada país, calculando el total de idiomas registrados por país.
+(world) mysql> -- Nótese que no hubo necesidad de indicar en SELECT, ON o GROUP BY el nombre de la tabla de las respectivas columnas pues todo el QUERY está libre de ambigüedades.
+(world) mysql> 
+(world) mysql> -- Ejemplo 10 (JOIN con subconsulta)
+(world) mysql> /*
+   /*> Queremos agrupar las ciudades por país y obtener la población mínima de cada país.
+   /*> */
+(world) mysql> SELECT CountryCode, MIN(Population) AS MinCityPopulation
+    -> FROM city
+    -> GROUP BY CountryCode
+    -> ;
++-------------+-------------------+
+| CountryCode | MinCityPopulation |
++-------------+-------------------+
+| ABW         |             29034 |
+| AFG         |            127800 |
+| AGO         |            118200 |
+| AIA         |               595 |
+| ALB         |            270000 |
+| AND         |             21189 |
+| ANT         |              2345 |
+| ARE         |            114395 |
+| ARG         |             91101 |
+| ARM         |            172700 |
+| ASM         |              2323 |
+| ATG         |             24000 |
+| AUS         |             92273 |
+| AUT         |             91141 |
+| AZE         |             93900 |
+| BDI         |            300000 |
+| BEL         |             90935 |
+| BEN         |            103577 |
+| BFA         |            105000 |
+| BGD         |             96717 |
+| BGR         |             94686 |
+| BHR         |            148000 |
+| BHS         |            172000 |
+| BIH         |             96027 |
+| BLR         |             97000 |
+| BLZ         |              7105 |
+| BMU         |              1200 |
+| BOL         |            125255 |
+| BRA         |             89200 |
+| BRB         |              6070 |
+| BRN         |             21484 |
+| BTN         |             22000 |
+| BWA         |            101805 |
+| CAF         |            524000 |
+| CAN         |             89269 |
+| CCK         |               167 |
+| CHE         |            114500 |
+| CHL         |             91056 |
+| CHN         |             89288 |
+| CIV         |            109445 |
+| CMR         |            112454 |
+| COD         |            101309 |
+| COG         |            500000 |
+| COK         |             11900 |
+| COL         |             90688 |
+| COM         |             36000 |
+| CPV         |             94800 |
+| CRI         |            339131 |
+| CUB         |             98505 |
+| CXR         |               700 |
+| CYM         |             19600 |
+| CYP         |            154400 |
+| CZE         |             91309 |
+| DEU         |             89667 |
+| DJI         |            383000 |
+| DMA         |             16243 |
+| DNK         |             90327 |
+| DOM         |             89423 |
+| DZA         |             89415 |
+| ECU         |            123045 |
+| EGY         |             91300 |
+| ERI         |            431000 |
+| ESH         |            169000 |
+| ESP         |             92262 |
+| EST         |            101246 |
+| ETH         |             96140 |
+| FIN         |             96921 |
+| FJI         |             77366 |
+| FLK         |              1636 |
+| FRA         |             90674 |
+| FRO         |             14542 |
+| FSM         |              8600 |
+| GAB         |            419000 |
+| GBR         |             23487 |
+| GEO         |            111700 |
+| GHA         |            103653 |
+| GIB         |             27025 |
+| GIN         |           1090610 |
+| GLP         |             12433 |
+| GMB         |             42326 |
+| GNB         |            241000 |
+| GNQ         |             40000 |
+| GRC         |            113090 |
+| GRD         |              4621 |
+| GRL         |             13445 |
+| GTM         |             90801 |
+| GUF         |             50699 |
+| GUM         |              1139 |
+| GUY         |            254000 |
+| HKG         |           1312637 |
+| HND         |             89200 |
+| HRV         |            104761 |
+| HTI         |            102233 |
+| HUN         |            105119 |
+| IDN         |             89900 |
+| IND         |             89053 |
+| IRL         |            127187 |
+| IRN         |             89800 |
+| IRQ         |            114516 |
+| ISL         |            109184 |
+| ISR         |             90300 |
+| ITA         |             88987 |
+| JAM         |             99799 |
+| JOR         |             89104 |
+| JPN         |             91170 |
+| KAZ         |             90000 |
+| KEN         |             91258 |
+| KGZ         |            222700 |
+| KHM         |            105100 |
+| KIR         |              2226 |
+| KNA         |             11600 |
+| KOR         |             92239 |
+| KWT         |             28859 |
+| LAO         |             96652 |
+| LBN         |            240000 |
+| LBR         |            850000 |
+| LBY         |             89338 |
+| LCA         |              2301 |
+| LIE         |              5043 |
+| LKA         |            100000 |
+| LSO         |            297000 |
+| LTU         |            133695 |
+| LUX         |             80700 |
+| LVA         |             89439 |
+| MAC         |            437500 |
+| MAR         |             90400 |
+| MCO         |              1234 |
+| MDA         |            125700 |
+| MDG         |             99005 |
+| MDV         |             71000 |
+| MEX         |             89143 |
+| MHL         |             28000 |
+| MKD         |            444299 |
+| MLI         |            809552 |
+| MLT         |              7073 |
+| MMR         |             94800 |
+| MNG         |            773700 |
+| MNP         |              9200 |
+| MOZ         |             93985 |
+| MRT         |             97600 |
+| MSR         |              2000 |
+| MTQ         |             94050 |
+| MUS         |             98464 |
+| MWI         |            435964 |
+| MYS         |            102019 |
+| MYT         |             12000 |
+| NAM         |            169000 |
+| NCL         |             76293 |
+| NER         |            112965 |
+| NFK         |               800 |
+| NGA         |            101000 |
+| NIC         |             88971 |
+| NIU         |               682 |
+| NLD         |             92713 |
+| NOR         |            101340 |
+| NPL         |             90639 |
+| NRU         |               559 |
+| NZL         |             98100 |
+| OMN         |             51969 |
+| PAK         |             89400 |
+| PAN         |            315382 |
+| PCN         |                42 |
+| PER         |             90642 |
+| PHL         |             90603 |
+| PLW         |             12000 |
+| PNG         |            247000 |
+| POL         |             93901 |
+| PRI         |             94085 |
+| PRK         |            171500 |
+| PRT         |             90535 |
+| PRY         |             95287 |
+| PSE         |             92020 |
+| PYF         |             25553 |
+| QAT         |            355000 |
+| REU         |            131480 |
+| ROM         |             93976 |
+| RUS         |             89800 |
+| RWA         |            286000 |
+| SAU         |             91000 |
+| SDN         |            114980 |
+| SEN         |             99400 |
+| SGP         |           4017733 |
+| SHN         |              1500 |
+| SJM         |              1438 |
+| SLB         |             50100 |
+| SLE         |            850000 |
+| SLV         |             88800 |
+| SMR         |              2294 |
+| SOM         |             90000 |
+| SPM         |              5808 |
+| STP         |             49541 |
+| SUR         |            112000 |
+| SVK         |             93977 |
+| SVN         |            115532 |
+| SWE         |             90742 |
+| SWZ         |             61000 |
+| SYC         |             41000 |
+| SYR         |             91081 |
+| TCA         |              4800 |
+| TCD         |             99500 |
+| TGO         |            375000 |
+| THA         |             94100 |
+| TJK         |            161500 |
+| TKL         |               300 |
+| TKM         |            101000 |
+| TMP         |             47900 |
+| TON         |             22400 |
+| TTO         |             43396 |
+| TUN         |            106600 |
+| TUR         |             90200 |
+| TUV         |              4600 |
+| TWN         |             90000 |
+| TZA         |             92800 |
+| UGA         |            890800 |
+| UKR         |             89000 |
+| URY         |           1236000 |
+| USA         |             89063 |
+| UZB         |            109500 |
+| VAT         |               455 |
+| VCT         |             17100 |
+| VEN         |             90000 |
+| VGB         |              8000 |
+| VIR         |             13000 |
+| VNM         |             97044 |
+| VUT         |             33700 |
+| WLF         |              1137 |
+| WSM         |             35900 |
+| YEM         |            103300 |
+| YUG         |             92303 |
+| ZAF         |             89292 |
+| ZMB         |            118100 |
+| ZWE         |            128037 |
++-------------+-------------------+
+232 rows in set (0.01 sec)
+
+(world) mysql> /* 
+   /*> Obtener a su vez el nombre de la ciudad con la población mínima de cada país.
+   /*> */
+(world) mysql> SELECT 
+    ->     T.CountryCode,
+    ->     T.MinCityPopulation AS Population,
+    ->     city.Name AS CityName
+    -> FROM
+    ->     (SELECT 
+    ->         CountryCode, MIN(Population) AS MinCityPopulation
+    ->     FROM
+    ->         city
+    ->     GROUP BY CountryCode) AS T
+    -> JOIN
+    ->     city ON T.CountryCode = city.CountryCode AND T.MinCityPopulation = city.Population
+    -> ;
++-------------+------------+------------------------------------+
+| CountryCode | Population | CityName                           |
++-------------+------------+------------------------------------+
+| AFG         |     127800 | Mazar-e-Sharif                     |
+| NLD         |      92713 | Alkmaar                            |
+| ANT         |       2345 | Willemstad                         |
+| ALB         |     270000 | Tirana                             |
+| DZA         |      89415 | Ghardaïa                           |
+| ASM         |       2323 | Fagatogo                           |
+| AND         |      21189 | Andorra la Vella                   |
+| AGO         |     118200 | Namibe                             |
+| AIA         |        595 | The Valley                         |
+| ATG         |      24000 | Saint John´s                       |
+| ARE         |     114395 | Ajman                              |
+| ARG         |      91101 | Tandil                             |
+| ARM         |     172700 | Vanadzor                           |
+| ABW         |      29034 | Oranjestad                         |
+| AUS         |      92273 | Cairns                             |
+| AZE         |      93900 | Mingäçevir                         |
+| BHS         |     172000 | Nassau                             |
+| BHR         |     148000 | al-Manama                          |
+| BGD         |      96717 | Gazipur                            |
+| BRB         |       6070 | Bridgetown                         |
+| BEL         |      90935 | Mons                               |
+| BLZ         |       7105 | Belmopan                           |
+| BEN         |     103577 | Parakou                            |
+| BMU         |       1200 | Hamilton                           |
+| BTN         |      22000 | Thimphu                            |
+| BOL         |     125255 | Tarija                             |
+| BIH         |      96027 | Zenica                             |
+| BWA         |     101805 | Francistown                        |
+| BRA         |      89200 | Águas Lindas de Goiás              |
+| GBR         |      23487 | Douglas                            |
+| VGB         |       8000 | Road Town                          |
+| BRN         |      21484 | Bandar Seri Begawan                |
+| BGR         |      94686 | Šumen                              |
+| BFA         |     105000 | Koudougou                          |
+| BDI         |     300000 | Bujumbura                          |
+| CYM         |      19600 | George Town                        |
+| CHL         |      91056 | Melipilla                          |
+| COK         |      11900 | Avarua                             |
+| CRI         |     339131 | San José                           |
+| DJI         |     383000 | Djibouti                           |
+| DMA         |      16243 | Roseau                             |
+| DOM         |      89423 | San Felipe de Puerto Plata         |
+| ECU         |     123045 | Esmeraldas                         |
+| EGY         |      91300 | Disuq                              |
+| SLV         |      88800 | Apopa                              |
+| ERI         |     431000 | Asmara                             |
+| ESP         |      92262 | Torrejón de Ardoz                  |
+| ZAF         |      89292 | Ladysmith                          |
+| ETH         |      96140 | Bahir Dar                          |
+| FLK         |       1636 | Stanley                            |
+| FJI         |      77366 | Suva                               |
+| PHL         |      90603 | Ligao                              |
+| FRO         |      14542 | Tórshavn                           |
+| GAB         |     419000 | Libreville                         |
+| GMB         |      42326 | Banjul                             |
+| GEO         |     111700 | Sohumi                             |
+| GHA         |     103653 | Sekondi-Takoradi                   |
+| GIB         |      27025 | Gibraltar                          |
+| GRD         |       4621 | Saint George´s                     |
+| GRL         |      13445 | Nuuk                               |
+| GLP         |      12433 | Basse-Terre                        |
+| GUM         |       1139 | Agaña                              |
+| GTM         |      90801 | Quetzaltenango                     |
+| GIN         |    1090610 | Conakry                            |
+| GNB         |     241000 | Bissau                             |
+| GUY         |     254000 | Georgetown                         |
+| HTI         |     102233 | Le-Cap-Haïtien                     |
+| HND         |      89200 | La Ceiba                           |
+| HKG         |    1312637 | Victoria                           |
+| SJM         |       1438 | Longyearbyen                       |
+| IDN         |      89900 | Banyuwangi                         |
+| IDN         |      89900 | Tanjung Pinang                     |
+| IND         |      89053 | Vejalpur                           |
+| IRQ         |     114516 | Baquba                             |
+| IRN         |      89800 | Qomsheh                            |
+| IRL         |     127187 | Cork                               |
+| ISL         |     109184 | Reykjavík                          |
+| ISR         |      90300 | Rehovot                            |
+| ITA         |      88987 | Pesaro                             |
+| TMP         |      47900 | Dili                               |
+| AUT         |      91141 | Klagenfurt                         |
+| JAM         |      99799 | Portmore                           |
+| JPN         |      91170 | Tsuyama                            |
+| YEM         |     103300 | Ibb                                |
+| JOR         |      89104 | Wadi al-Sir                        |
+| CXR         |        700 | Flying Fish Cove                   |
+| YUG         |      92303 | Prizren                            |
+| KHM         |     105100 | Siem Reap                          |
+| CMR         |     112454 | Nkongsamba                         |
+| CAN         |      89269 | Barrie                             |
+| CPV         |      94800 | Praia                              |
+| KAZ         |      90000 | Zhezqazghan                        |
+| KEN         |      91258 | Nyeri                              |
+| CAF         |     524000 | Bangui                             |
+| CHN         |      89288 | Huangyan                           |
+| KGZ         |     222700 | Osh                                |
+| KIR         |       2226 | Bairiki                            |
+| COL         |      90688 | Giron                              |
+| COM         |      36000 | Moroni                             |
+| COG         |     500000 | Pointe-Noire                       |
+| COD         |     101309 | Kalemie                            |
+| CCK         |        167 | West Island                        |
+| PRK         |     171500 | Kaesong                            |
+| KOR         |      92239 | Mun-gyong                          |
+| GRC         |     113090 | Larisa                             |
+| HRV         |     104761 | Osijek                             |
+| CUB         |      98505 | Ciego de Ávila                     |
+| KWT         |      28859 | Kuwait                             |
+| CYP         |     154400 | Limassol                           |
+| LAO         |      96652 | Savannakhet                        |
+| LVA         |      89439 | Liepaja                            |
+| LSO         |     297000 | Maseru                             |
+| LBN         |     240000 | Tripoli                            |
+| LBR         |     850000 | Monrovia                           |
+| LBY         |      89338 | al-Zawiya                          |
+| LIE         |       5043 | Vaduz                              |
+| LTU         |     133695 | Panevezys                          |
+| LUX         |      80700 | Luxembourg [Luxemburg/Lëtzebuerg]  |
+| ESH         |     169000 | El-Aaiún                           |
+| MAC         |     437500 | Macao                              |
+| MDG         |      99005 | Fianarantsoa                       |
+| MKD         |     444299 | Skopje                             |
+| MWI         |     435964 | Lilongwe                           |
+| MDV         |      71000 | Male                               |
+| MYS         |     102019 | Shah Alam                          |
+| MLI         |     809552 | Bamako                             |
+| MLT         |       7073 | Valletta                           |
+| MAR         |      90400 | El Araich                          |
+| MHL         |      28000 | Dalap-Uliga-Darrit                 |
+| MTQ         |      94050 | Fort-de-France                     |
+| MRT         |      97600 | Nouâdhibou                         |
+| MUS         |      98464 | Vacoas-Phoenix                     |
+| MYT         |      12000 | Mamoutzou                          |
+| MEX         |      89143 | Tierra Blanca                      |
+| FSM         |       8600 | Palikir                            |
+| MDA         |     125700 | Bender (Tîghina)                   |
+| MCO         |       1234 | Monaco-Ville                       |
+| MNG         |     773700 | Ulan Bator                         |
+| MSR         |       2000 | Plymouth                           |
+| MOZ         |      93985 | Maxixe                             |
+| MMR         |      94800 | Pagakku (Pakokku)                  |
+| NAM         |     169000 | Windhoek                           |
+| NRU         |        559 | Yaren                              |
+| NPL         |      90639 | Birgunj                            |
+| NIC         |      88971 | Masaya                             |
+| NER         |     112965 | Maradi                             |
+| NGA         |     101000 | Epe                                |
+| NIU         |        682 | Alofi                              |
+| NFK         |        800 | Kingston                           |
+| NOR         |     101340 | Bærum                              |
+| CIV         |     109445 | Korhogo                            |
+| OMN         |      51969 | Masqat                             |
+| PAK         |      89400 | Nowshera                           |
+| PLW         |      12000 | Koror                              |
+| PAN         |     315382 | San Miguelito                      |
+| PNG         |     247000 | Port Moresby                       |
+| PRY         |      95287 | Fernando de la Mora                |
+| PER         |      90642 | Castilla                           |
+| PCN         |         42 | Adamstown                          |
+| MNP         |       9200 | Garapan                            |
+| PRT         |      90535 | Braga                              |
+| PRI         |      94085 | Toa Baja                           |
+| POL         |      93901 | Jelenia Góra                       |
+| GNQ         |      40000 | Malabo                             |
+| QAT         |     355000 | Doha                               |
+| FRA         |      90674 | Montreuil                          |
+| GUF         |      50699 | Cayenne                            |
+| PYF         |      25553 | Papeete                            |
+| REU         |     131480 | Saint-Denis                        |
+| ROM         |      93976 | Resita                             |
+| RWA         |     286000 | Kigali                             |
+| SWE         |      90742 | Gävle                              |
+| SHN         |       1500 | Jamestown                          |
+| KNA         |      11600 | Basseterre                         |
+| LCA         |       2301 | Castries                           |
+| VCT         |      17100 | Kingstown                          |
+| SPM         |       5808 | Saint-Pierre                       |
+| DEU         |      89667 | Esslingen am Neckar                |
+| SLB         |      50100 | Honiara                            |
+| ZMB         |     118100 | Luanshya                           |
+| WSM         |      35900 | Apia                               |
+| SMR         |       2294 | San Marino                         |
+| STP         |      49541 | São Tomé                           |
+| SAU         |      91000 | Najran                             |
+| SEN         |      99400 | Diourbel                           |
+| SYC         |      41000 | Victoria                           |
+| SLE         |     850000 | Freetown                           |
+| SGP         |    4017733 | Singapore                          |
+| SVK         |      93977 | Prešov                             |
+| SVN         |     115532 | Maribor                            |
+| SOM         |      90000 | Hargeysa                           |
+| SOM         |      90000 | Kismaayo                           |
+| LKA         |     100000 | Negombo                            |
+| SDN         |     114980 | Juba                               |
+| FIN         |      96921 | Lahti                              |
+| SUR         |     112000 | Paramaribo                         |
+| SWZ         |      61000 | Mbabane                            |
+| CHE         |     114500 | Lausanne                           |
+| SYR         |      91081 | Idlib                              |
+| TJK         |     161500 | Khujand                            |
+| TWN         |      90000 | Miaoli                             |
+| TZA         |      92800 | Tabora                             |
+| DNK         |      90327 | Frederiksberg                      |
+| THA         |      94100 | Nakhon Pathom                      |
+| TGO         |     375000 | Lomé                               |
+| TKL         |        300 | Fakaofo                            |
+| TON         |      22400 | Nuku´alofa                         |
+| TTO         |      43396 | Port-of-Spain                      |
+| TCD         |      99500 | Moundou                            |
+| CZE         |      91309 | Pardubice                          |
+| TUN         |     106600 | Gabès                              |
+| TUR         |      90200 | Bandirma                           |
+| TKM         |     101000 | Mary                               |
+| TCA         |       4800 | Cockburn Town                      |
+| TUV         |       4600 | Funafuti                           |
+| UGA         |     890800 | Kampala                            |
+| UKR         |      89000 | Brovary                            |
+| UKR         |      89000 | Mukatševe                          |
+| HUN         |     105119 | Székesfehérvár                     |
+| URY         |    1236000 | Montevideo                         |
+| NCL         |      76293 | Nouméa                             |
+| NZL         |      98100 | Lower Hutt                         |
+| UZB         |     109500 | Termiz                             |
+| BLR         |      97000 | Molodetšno                         |
+| WLF         |       1137 | Mata-Utu                           |
+| VUT         |      33700 | Port-Vila                          |
+| VAT         |        455 | Città del Vaticano                 |
+| VEN         |      90000 | El Limón                           |
+| RUS         |      89800 | Novyi Urengoi                      |
+| VNM         |      97044 | Buon Ma Thuot                      |
+| EST         |     101246 | Tartu                              |
+| USA         |      89063 | Charleston                         |
+| VIR         |      13000 | Charlotte Amalie                   |
+| ZWE         |     128037 | Gweru                              |
+| PSE         |      92020 | Rafah                              |
++-------------+------------+------------------------------------+
+235 rows in set (0.01 sec)
+
+(world) mysql> -- La primera consulta del ejemplo muestra 232 rows, la segunda consulta muestra 235 rows.
+(world) mysql> -- ¿Esperarías ese resultado?
+(world) mysql> -- Mediante subconsultas (a partir de los QUERIES del ejemplo), ¿podrías identificar los 3 rows extras?
+(world) mysql> /*
+   /*> Respuesta: El siguiente QUERY muestra los países que tienen más de una ciudad que coinciden en MIN(Population).
+   /*> */
+(world) mysql> SELECT 
+    ->     B.CountryCode, COUNT(*)
+    -> FROM
+    ->     (SELECT 
+    ->         T.CountryCode,
+    ->         T.MinCityPopulation AS Population,
+    ->         city.Name AS CityName
+    ->     FROM
+    ->         (SELECT 
+    ->             CountryCode, MIN(Population) AS MinCityPopulation
+    ->         FROM
+    ->             city
+    ->         GROUP BY CountryCode) AS T
+    ->     JOIN city ON T.CountryCode = city.CountryCode AND T.MinCityPopulation = city.Population) AS B
+    -> GROUP BY B.CountryCode
+    -> HAVING COUNT(*) > 1
+    -> ;
++-------------+----------+
+| CountryCode | COUNT(*) |
++-------------+----------+
+| IDN         |        2 |
+| SOM         |        2 |
+| UKR         |        2 |
++-------------+----------+
+3 rows in set (0.01 sec)
+
+(world) mysql> 
+(world) mysql> -- Ejemplo 11 (JOIN y subconsultas)
+(world) mysql> /*
+   /*> Queremos mostrar el nombre del país, su continente y las ciudades que lo componen en un arreglo JSON
+   /*> de los países que cuenten con exactamente 1 idioma registrado.
+   /*> Muestre el resultado verticalmente.
+   /*> */
+(world) mysql> SELECT 
+    ->     CountryName, Continent, JSON_ARRAYAGG(CityName) AS 'CityArray'
+    -> FROM
+    ->     (SELECT 
+    ->         B.Code,
+    ->         B.Name AS CountryName,
+    ->         B.Continent,
+    ->         C.Name AS CityName
+    ->     FROM
+    ->         (SELECT 
+    ->             CountryCode
+    ->         FROM
+    ->             countrylanguage
+    ->         GROUP BY 1
+    ->         HAVING COUNT(*) = 1) AS A
+    ->     JOIN country AS B ON A.CountryCode = B.Code
+    ->     JOIN city AS C ON A.CountryCode = C.CountryCode) AS D
+    -> GROUP BY Code
+    -> \G
+*************************** 1. row ***************************
+CountryName: Anguilla
+  Continent: North America
+  CityArray: ["South Hill", "The Valley"]
+*************************** 2. row ***************************
+CountryName: Bosnia and Herzegovina
+  Continent: Europe
+  CityArray: ["Sarajevo", "Banja Luka", "Zenica"]
+*************************** 3. row ***************************
+CountryName: Bermuda
+  Continent: North America
+  CityArray: ["Saint George", "Hamilton"]
+*************************** 4. row ***************************
+CountryName: Cuba
+  Continent: North America
+  CityArray: ["La Habana", "Santiago de Cuba", "Camagüey", "Holguín", "Santa Clara", "Guantánamo", "Pinar del Río", "Bayamo", "Cienfuegos", "Victoria de las Tunas", "Matanzas", "Manzanillo", "Sancti-Spíritus", "Ciego de Ávila"]
+*************************** 5. row ***************************
+CountryName: Cayman Islands
+  Continent: North America
+  CityArray: ["George Town"]
+*************************** 6. row ***************************
+CountryName: Western Sahara
+  Continent: Africa
+  CityArray: ["El-Aaiún"]
+*************************** 7. row ***************************
+CountryName: Falkland Islands
+  Continent: South America
+  CityArray: ["Stanley"]
+*************************** 8. row ***************************
+CountryName: Grenada
+  Continent: North America
+  CityArray: ["Saint George´s"]
+*************************** 9. row ***************************
+CountryName: Montserrat
+  Continent: North America
+  CityArray: ["Plymouth"]
+*************************** 10. row ***************************
+CountryName: Norfolk Island
+  Continent: Oceania
+  CityArray: ["Kingston"]
+*************************** 11. row ***************************
+CountryName: Pitcairn
+  Continent: Oceania
+  CityArray: ["Adamstown"]
+*************************** 12. row ***************************
+CountryName: Portugal
+  Continent: Europe
+  CityArray: ["Lisboa", "Porto", "Amadora", "Coímbra", "Braga"]
+*************************** 13. row ***************************
+CountryName: Saudi Arabia
+  Continent: Asia
+  CityArray: ["Riyadh", "Jedda", "Mekka", "Medina", "al-Dammam", "al-Taif", "Tabuk", "Burayda", "al-Hufuf", "al-Mubarraz", "Khamis Mushayt", "Hail", "al-Kharj", "al-Khubar", "Jubayl", "Hafar al-Batin", "al-Tuqba", "Yanbu", "Abha", "Ara´ar", "al-Qatif", "al-Hawiya", "Unayza", "Najran"]
+*************************** 14. row ***************************
+CountryName: Saint Helena
+  Continent: Africa
+  CityArray: ["Jamestown"]
+*************************** 15. row ***************************
+CountryName: San Marino
+  Continent: Europe
+  CityArray: ["Serravalle", "San Marino"]
+*************************** 16. row ***************************
+CountryName: Saint Pierre and Miquelon
+  Continent: North America
+  CityArray: ["Saint-Pierre"]
+*************************** 17. row ***************************
+CountryName: Turks and Caicos Islands
+  Continent: North America
+  CityArray: ["Cockburn Town"]
+*************************** 18. row ***************************
+CountryName: Uruguay
+  Continent: South America
+  CityArray: ["Montevideo"]
+*************************** 19. row ***************************
+CountryName: Holy See (Vatican City State)
+  Continent: Europe
+  CityArray: ["Città del Vaticano"]
+*************************** 20. row ***************************
+CountryName: Virgin Islands, British
+  Continent: North America
+  CityArray: ["Road Town"]
+20 rows in set (0.00 sec)
+
+(world) mysql> 
+(world) mysql> -- Ejemplo 12 (JOIN y subconsultas)
+(world) mysql> /*
+   /*> Queremos mostrar el nombre del país, su continente, las ciudades que lo componen en un arreglo JSON y generar un objeto JSON tal que
+   /*> las llaves sean el idioma y los valores la indicación de si el idioma es oficial 'T' o no lo es 'F', tal como se indica en la columna `IsOfficial`,
+   /*> de los países que cuenten con exactamente 4 idiomas registrados como oficiales.
+   /*> Muestra el resultado verticalmente.
+   /*> */
+(world) mysql> SELECT 
+    ->     B.Name AS CountryName,
+    ->     B.Continent,
+    ->     JSON_ARRAYAGG(C.Name) AS CityArray,
+    ->     D.LanguageObject
+    -> FROM
+    ->     (SELECT 
+    ->         CountryCode
+    ->     FROM
+    ->         countrylanguage
+    ->     WHERE
+    ->         isofficial = 'T'
+    ->     GROUP BY 1
+    ->     HAVING COUNT(*) = 4) AS A
+    -> JOIN
+    ->     country AS B ON A.CountryCode = B.Code
+    -> JOIN
+    ->     city AS C ON A.CountryCode = C.CountryCode
+    -> JOIN
+    ->     (SELECT 
+    ->         CountryCode,
+    ->         JSON_OBJECTAGG(Language, IsOfficial) AS LanguageObject
+    ->     FROM
+    ->         countrylanguage
+    ->     WHERE
+    ->         CountryCode IN (SELECT 
+    ->                             CountryCode 
+    ->                         FROM 
+    ->                             countrylanguage 
+    ->                         WHERE 
+    ->                             isofficial = 'T' 
+    ->                         GROUP BY 1 
+    ->                         HAVING COUNT(*) = 4)
+    ->     GROUP BY CountryCode) AS D ON A.CountryCode = D.CountryCode
+    -> GROUP BY B.Code
+    -> \G
+*************************** 1. row ***************************
+   CountryName: Switzerland
+     Continent: Europe
+     CityArray: ["Zürich", "Geneve", "Basel", "Bern", "Lausanne"]
+LanguageObject: {"French": "T", "German": "T", "Italian": "T", "Romansh": "T"}
+*************************** 2. row ***************************
+   CountryName: South Africa
+     Continent: Africa
+     CityArray: ["Cape Town", "Soweto", "Johannesburg", "Port Elizabeth", "Pretoria", "Inanda", "Durban", "Vanderbijlpark", "Kempton Park", "Alberton", "Pinetown", "Pietermaritzburg", "Benoni", "Randburg", "Umlazi", "Bloemfontein", "Vereeniging", "Wonderboom", "Roodepoort", "Boksburg", "Klerksdorp", "Soshanguve", "Newcastle", "East London", "Welkom", "Kimberley", "Uitenhage", "Chatsworth", "Mdantsane", "Krugersdorp", "Botshabelo", "Brakpan", "Witbank", "Oberholzer", "Germiston", "Springs", "Westonaria", "Randfontein", "Paarl", "Potchefstroom", "Rustenburg", "Nigel", "George", "Ladysmith"]
+LanguageObject: {"Zulu": "T", "Swazi": "F", "Venda": "F", "Xhosa": "T", "Tsonga": "F", "Tswana": "F", "English": "T", "Ndebele": "F", "Afrikaans": "T", "Northsotho": "F", "Southsotho": "F"}
+2 rows in set (0.01 sec)
+
+(world) mysql> notee
