@@ -60,6 +60,9 @@ CREATE OR REPLACE VIEW v_PopulationContinentStatistics AS
 SELECT Continent, MIN(Population) AS MinPopulation, AVG(Population) AS AvgPopulation, MAX(Population) AS MaxPopulation
 FROM country
 GROUP BY Continent;
+-- Hagamos un SELECT de todo en la vista.
+SELECT * FROM v_PopulationContinentStatistics;
+-- Observamos que las columnas de la vista están renombradas. 
 
 /*
 Utilizaremos la vista v_PopulationContinentStatistics para consultar los países que tienen una población mayor al promedio de su continente.
@@ -98,9 +101,8 @@ FROM country
 WHERE Continent = 'South America';
 -- Esta vista almacena una consulta que nos duelve el área superficial con formato.
 SELECT * FROM v_SouthAmericaCountries;
--- Observar que las columnas de la vista están renombradas. 
 -- ¿Cómo seleccionamos columnas cuyos nombres tienen espacios?
--- Empleamos la tílde invertida (`)
+-- R: Empleamos la tílde invertida (`)
 SELECT CountryName, `SurfaceArea (km^2)` FROM v_SouthAmericaCountries;
 
 -- Ejemplo 4
