@@ -56,22 +56,22 @@ DROP TABLE IF EXISTS t_de_prueba;
 /*
 Creamos una vista con cálculos estadísticos de la población por continente.
 */
-CREATE OR REPLACE VIEW PopulationContinentStatistics AS 
+CREATE OR REPLACE VIEW v_PopulationContinentStatistics AS 
 SELECT Continent, MIN(Population) AS MinPopulation, AVG(Population) AS AvgPopulation, MAX(Population) AS MaxPopulation
 FROM country
 GROUP BY Continent;
 
 /*
-Utilizaremos la vista PopulationContinentStatistics para consultar los países que tienen una población mayor al promedio de su continente.
+Utilizaremos la vista v_PopulationContinentStatistics para consultar los países que tienen una población mayor al promedio de su continente.
 */
 SELECT country.Name AS CountryName, country.Continent, country.Population
 FROM country
-JOIN PopulationContinentStatistics AS PCS ON country.Continent = PCS.Continent
+JOIN v_PopulationContinentStatistics AS PCS ON country.Continent = PCS.Continent
 WHERE country.Population > AvgPopulation
 ORDER BY country.Continent; 
 
 /*
-Utilizaremos la vista PopulationContinentStatistics para catalogar a los países según si su población supera o no al promedio de su continente.
+Utilizaremos la vista v_PopulationContinentStatistics para catalogar a los países según si su población supera o no al promedio de su continente.
 Si lo supera, lo indicaremos como 'Mucha Gente'.
 En caso contrario, lo indicaremos como 'Poca Gente'.
 */
@@ -81,27 +81,27 @@ SELECT country.Name AS CountryName, country.Continent,
         ELSE 'Poca Gente'
     END AS 'Criterio'
 FROM country
-JOIN PopulationContinentStatistics AS PCS ON country.Continent = PCS.Continent
+JOIN v_PopulationContinentStatistics AS PCS ON country.Continent = PCS.Continent
 ORDER BY country.Continent;
 -- Con este ejemplo mostramos una de las utilidades de las vistas:
 -- Simplifica la obtención de consultas repetitivas al definir vistas cuyos queries sean de uso común o recurrente.
--- En la vista PopulationContinentStatistics guardamos el query que genera información estadística que puede ser de uso recurrente.
+-- En la vista v_PopulationContinentStatistics guardamos el query que genera información estadística que puede ser de uso recurrente.
 
 -- Ejemplo 3
 /*
 Creamos una vista para listar los países de un continente en específico.
 Nos interesa mostrar el nombre del país, su población y área superficial de los países de América del Sur.
 */
-CREATE OR REPLACE VIEW SouthAmericaCountries AS
+CREATE OR REPLACE VIEW v_SouthAmericaCountries AS
 SELECT Name AS CountryName, Population, LPAD(FORMAT(SurfaceArea, 0), LENGTH('SurfaceArea (km^2)'), ' ') AS 'SurfaceArea (km^2)'
 FROM country
 WHERE Continent = 'South America';
 -- Esta vista almacena una consulta que nos duelve el área superficial con formato.
-SELECT * FROM SouthAmericaCountries;
+SELECT * FROM v_SouthAmericaCountries;
 -- Observar que las columnas de la vista están renombradas. 
 -- ¿Cómo seleccionamos columnas cuyos nombres tienen espacios?
 -- Empleamos la tílde invertida (`)
-SELECT CountryName, `SurfaceArea (km^2)` FROM SouthAmericaCountries;
+SELECT CountryName, `SurfaceArea (km^2)` FROM v_SouthAmericaCountries;
 
 -- Ejemplo 4
 /*
@@ -109,19 +109,19 @@ Creamos una vista con subconsultas.
 Nos interesa conocer el número de ciudades de los países que están registrados en la tabla `country`.
 En caso de faltar algún dato, indicarlo con N/A.
 */
-CREATE OR REPLACE VIEW CitiesXCountry AS
+CREATE OR REPLACE VIEW v_CitiesXCountry AS
 SELECT Name AS CountryName, IFNULL(CityCount, 'N/A') AS CityCount
 FROM country
 LEFT JOIN (SELECT CountryCode, COUNT(*) AS CityCount FROM city GROUP BY 1) AS R ON Code = CountryCode 
 ORDER BY R.CityCount;
 -- Esta vista almacena una consulta que nos indica con N/A los países que no tienen ciudades registradas en la tabla `city`.
-SELECT * FROM CitiesXCountry;
+SELECT * FROM v_CitiesXCountry;
 
 -- Ejemplo 5
 /*
-A partir de la vista anterior (CitiesXCountry) obtener los países que no tienen ciudades registradas.
+A partir de la vista anterior (v_CitiesXCountry) obtener los países que no tienen ciudades registradas.
 */
-SELECT * FROM CitiesXCountry WHERE CityCount = 'N/A';
+SELECT * FROM v_CitiesXCountry WHERE CityCount = 'N/A';
 -- Este ejemplo junto con el anterior mostramos otra de las utilidades de las vistas:
 -- Simplifica la obtención de consultas que involucren queries complejos. Ya no es necesario volver a escribir el query definido en la vista.
 
@@ -131,7 +131,7 @@ Queremos una vista que muestre el nombre del país, su continente, las ciudades 
 las llaves sean el idioma y los valores la indicación de si el idioma es oficial 'T' o no lo es 'F', tal como se indica en la columna `IsOfficial`,
 de los países que cuenten con registro tanto en `city` como en `countrylanguage`.
 */
-CREATE OR REPLACE VIEW JSON_OBJJ_Country AS
+CREATE OR REPLACE VIEW v_JSON_OBJJ_Country AS
 SELECT 
     B.Name AS CountryName,
     B.Continent,
@@ -150,11 +150,11 @@ JOIN
     GROUP BY CountryCode) AS D ON B.Code = D.CountryCode
 GROUP BY B.Code;
 -- Ya teniendo la vista creada es fácil obtener la consulta de cada país simplemente haciendo un WHERE.
-SELECT * FROM JSON_OBJJ_Country WHERE CountryName = 'mexico'\G
-SELECT * FROM JSON_OBJJ_Country WHERE CountryName = 'jamaica'\G
-SELECT * FROM JSON_OBJJ_Country WHERE CountryName = 'peru'\G
+SELECT * FROM v_JSON_OBJJ_Country WHERE CountryName = 'mexico'\G
+SELECT * FROM v_JSON_OBJJ_Country WHERE CountryName = 'jamaica'\G
+SELECT * FROM v_JSON_OBJJ_Country WHERE CountryName = 'peru'\G
 
 /*
 Borramos de forma segura las vistas creadas.
 */
-DROP VIEW IF EXISTS PopulationContinentStatistics, SouthAmericaCountries, CitiesXCountry, JSON_OBJJ_Country;
+DROP VIEW IF EXISTS v_PopulationContinentStatistics, v_SouthAmericaCountries, v_CitiesXCountry, v_JSON_OBJJ_Country;
