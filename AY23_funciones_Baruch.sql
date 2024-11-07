@@ -185,34 +185,34 @@ SELECT Name, PopulationInMillions(Population) FROM country ORDER BY 2 DESC LIMIT
 
 -- Ejemplo 7 (Funciones con SELECT)
 /*
-Crearemos una función que toma el código de un país y devuelve su idioma oficial (el más hablado) basado en el porcentaje de hablantes.
+Crearemos una función que toma el código de un país y devuelve sus idiomas oficiales junto con el procentaje de hablantes.
 */
-DROP FUNCTION IF EXISTS MainLanguage;
+DROP FUNCTION IF EXISTS OfficialLanguage;
 
 DELIMITER !!
 
-CREATE FUNCTION IF NOT EXISTS MainLanguage(Code CHAR(3)) 
-RETURNS VARCHAR(50)
+CREATE FUNCTION IF NOT EXISTS OfficialLanguage(Code CHAR(3)) 
+RETURNS VARCHAR(100)
 DETERMINISTIC
 BEGIN
-    DECLARE lang VARCHAR(50);
+    DECLARE langs VARCHAR(100);
 
-    SELECT Language INTO lang   -- Con INTO asignamos el resultado del SELECT a la variable que definimos como lang.
+    
+    SELECT GROUP_CONCAT(CONCAT(Language, ' (', Percentage, '%', ')') ORDER BY Percentage DESC SEPARATOR ', ') INTO langs   
+    -- Con INTO asignamos el resultado del SELECT a la variable que definimos como langs.
+    -- IMPORTANTE: Solo se puede asignar con INTO un único valor a la variable definida. 
     FROM countrylanguage
     WHERE CountryCode = Code AND IsOfficial = 'T'
-    ORDER BY Percentage DESC
-    LIMIT 1;
-    -- Solo se puede asignar con INTO un único valor a la variable definida. 
-    -- Por ello usamos LIMIT 1 para reducir el número de filas (resultados) a una sola (en caso de obtener más de una fila).
-    -- Usar LIMIT no es una buena práctica.
+    GROUP BY CountryCode;
+    -- Usar LIMIT 1 en el caso de obtener más de una fila como resultado del SELECT para reducir el número de filas a una sola y poder asignar un único valor a la variable.
 
-    RETURN lang;
+    RETURN langs;
 END !!
 
 DELIMITER ;
 
--- Llamamos a la función `MainLanguage`.
-SELECT Name, IFNULL(MainLanguage(Code), 'No hay registro') AS 'MainLanguage' FROM country ORDER BY 1 LIMIT 10;
+-- Llamamos a la función `OfficialLanguage`.
+SELECT Name, IFNULL(OfficialLanguage(Code), 'No hay registro') AS 'OfficialLanguage' FROM country ORDER BY 1 LIMIT 10;
 -- Obsérvese que la función nos puede devolver nulos para algunos países.
 -- Lo anterior es debido a uno de los dos siguientes casos:
 -- 1) No hay registros del país en la tabla `countrylanguage`.
