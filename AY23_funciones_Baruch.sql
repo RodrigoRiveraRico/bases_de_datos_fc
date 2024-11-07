@@ -187,15 +187,15 @@ SELECT Name, PopulationInMillions(Population) FROM country ORDER BY 2 DESC LIMIT
 /*
 Crearemos una función que toma el código de un país y devuelve sus idiomas oficiales junto con el procentaje de hablantes.
 */
-DROP FUNCTION IF EXISTS OfficialLanguage;
+DROP FUNCTION IF EXISTS OfficialLanguages;
 
 DELIMITER !!
 
-CREATE FUNCTION IF NOT EXISTS OfficialLanguage(Code CHAR(3)) 
-RETURNS VARCHAR(100)
+CREATE FUNCTION IF NOT EXISTS OfficialLanguages(Code CHAR(3)) 
+RETURNS TINYTEXT
 DETERMINISTIC
 BEGIN
-    DECLARE langs VARCHAR(100);
+    DECLARE langs TINYTEXT;
 
     
     SELECT GROUP_CONCAT(CONCAT(Language, ' (', Percentage, '%', ')') ORDER BY Percentage DESC SEPARATOR ', ') INTO langs   
@@ -211,8 +211,8 @@ END !!
 
 DELIMITER ;
 
--- Llamamos a la función `OfficialLanguage`.
-SELECT Name, IFNULL(OfficialLanguage(Code), 'No hay registro') AS 'OfficialLanguage' FROM country ORDER BY 1 LIMIT 10;
+-- Llamamos a la función `OfficialLanguages`.
+SELECT Name, IFNULL(OfficialLanguages(Code), 'No hay registro') AS 'OfficialLanguages' FROM country ORDER BY 1 LIMIT 10;
 -- Obsérvese que la función nos puede devolver nulos para algunos países.
 -- Lo anterior es debido a uno de los dos siguientes casos:
 -- 1) No hay registros del país en la tabla `countrylanguage`.
