@@ -1,0 +1,845 @@
+world > /*
+   /*> =================================
+   /*> Ayudantía 22: VISTAS
+   /*> Rodrigo Baruch Rivera Rico
+   /*> 07 noviembre 2024
+   /*> =================================
+   /*> */
+world > 
+world > -- Antes de empezar: cargar la base world y ponerla en uso
+world > -- \. path\to\script\base_world.sql
+world > -- \u world
+world > 
+world > /*
+   /*> ¿Qué es una tabla virtual?
+   /*> >   En términos generales, es una tabla que no se almacena en la base de datos 
+   /*>     y se computa de alguna forma con el motor de almacenamiento.
+   /*> 
+   /*> ¿Qué es una vista?
+   /*> >   Es un query almacenado que al ser invocado produce un resultado (una tabla virtual).
+   /*> >   Las vistas permiten visualizar datos de una o más tablas.
+   /*> >   Las vistas son creadas seleccionado un conjunto de columnas y un conjunto de filas
+   /*>     de una tabla la cual ha sido filtrada bajo alguna condición.
+   /*> 
+   /*> ¿Por qué es útil?
+   /*> >   En la implementación en una aplicación restringe el acceso a datos críticos a terceros usurarios.
+   /*> >   Simplifica la obtención de consultas que involucren queries complejos.
+   /*> >   Simplifica la obtención de consultas repetitivas al definir vistas cuyos queries sean de uso común o recurrente.
+   /*> */
+world > 
+world > -- Ejemplo 1
+world > /*
+   /*> Veamos primero que una vista muestra los datos actuales de la tabla de donde se obtienen.
+   /*> */
+world > -- Creamos la tabla t_de_prueba.
+world > CREATE TABLE IF NOT EXISTS t_de_prueba (cantidad int, precio int);
+Query OK, 0 rows affected (0.03 sec)
+
+world > -- Insertamos dos tuplas.
+world > INSERT INTO t_de_prueba VALUES (3, 50), (4,20);
+Query OK, 2 rows affected (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+world > -- Creamos una vista que nos muestra el precio total.
+world > CREATE OR REPLACE VIEW v_de_prueba AS SELECT cantidad, precio, cantidad*precio AS Total FROM t_de_prueba;
+Query OK, 0 rows affected (0.01 sec)
+
+world > -- Mostramos todo en la vista.
+world > SELECT * FROM v_de_prueba;
++----------+--------+-------+
+| cantidad | precio | Total |
++----------+--------+-------+
+|        3 |     50 |   150 |
+|        4 |     20 |    80 |
++----------+--------+-------+
+2 rows in set (0.00 sec)
+
+world > -- Insertamos otra tupla en la tabla t_de_prueba.
+world > INSERT INTO t_de_prueba VALUES (10,10);
+Query OK, 1 row affected (0.00 sec)
+
+world > -- Volvemos a mostrar todo en la vista. Observamos que la vista muestra los datos actuales.
+world > SELECT * FROM v_de_prueba;
++----------+--------+-------+
+| cantidad | precio | Total |
++----------+--------+-------+
+|        3 |     50 |   150 |
+|        4 |     20 |    80 |
+|       10 |     10 |   100 |
++----------+--------+-------+
+3 rows in set (0.00 sec)
+
+world > -- Mostramos cómo fue creada la vista.
+world > SHOW CREATE VIEW v_de_prueba;
++-------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------+
+| View        | Create View                                                                                                                                                                                                                                                         | character_set_client | collation_connection |
++-------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------+
+| v_de_prueba | CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_de_prueba` AS select `t_de_prueba`.`cantidad` AS `cantidad`,`t_de_prueba`.`precio` AS `precio`,(`t_de_prueba`.`cantidad` * `t_de_prueba`.`precio`) AS `Total` from `t_de_prueba` | utf8mb4              | utf8mb4_0900_ai_ci   |
++-------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------+
+1 row in set (0.00 sec)
+
+world > -- Borramos la vista.
+world > DROP VIEW IF EXISTS v_de_prueba;
+Query OK, 0 rows affected (0.00 sec)
+
+world > -- Verificamos que la tabla t_de_prueba no fue afectada al borrar la vista.
+world > SELECT * FROM t_de_prueba;
++----------+--------+
+| cantidad | precio |
++----------+--------+
+|        3 |     50 |
+|        4 |     20 |
+|       10 |     10 |
++----------+--------+
+3 rows in set (0.00 sec)
+
+world > -- Borramos la tabla.
+world > DROP TABLE IF EXISTS t_de_prueba;
+Query OK, 0 rows affected (0.01 sec)
+
+world > 
+world > -- Ejemplo 2
+world > /*
+   /*> Creamos una vista con cálculos estadísticos de la población por continente.
+   /*> */
+world > CREATE OR REPLACE VIEW v_PopulationContinentStatistics AS 
+    -> SELECT Continent, MIN(Population) AS MinPopulation, AVG(Population) AS AvgPopulation, MAX(Population) AS MaxPopulation
+    -> FROM country
+    -> GROUP BY Continent;
+Query OK, 0 rows affected (0.00 sec)
+
+world > -- Hagamos un SELECT de todo en la vista.
+world > SELECT * FROM v_PopulationContinentStatistics;
++---------------+---------------+---------------+---------------+
+| Continent     | MinPopulation | AvgPopulation | MaxPopulation |
++---------------+---------------+---------------+---------------+
+| North America |          7000 | 13053864.8649 |     278357000 |
+| Asia          |        286000 | 72647562.7451 |    1277558000 |
+| Africa        |             0 | 13525431.0345 |     111506000 |
+| Europe        |          1000 | 15871186.9565 |     146934000 |
+| South America |          2000 | 24698571.4286 |     170115000 |
+| Oceania       |             0 |  1085755.3571 |      18886000 |
+| Antarctica    |             0 |        0.0000 |             0 |
++---------------+---------------+---------------+---------------+
+7 rows in set (0.00 sec)
+
+world > -- Observamos que las columnas de la vista están renombradas. 
+world > 
+world > /*
+   /*> Utilizaremos la vista v_PopulationContinentStatistics para consultar los países que tienen una población mayor al promedio de su continente.
+   /*> */
+world > SELECT country.Name AS CountryName, country.Continent, country.Population
+    -> FROM country
+    -> JOIN v_PopulationContinentStatistics AS PCS ON country.Continent = PCS.Continent
+    -> WHERE country.Population > AvgPopulation
+    -> ORDER BY country.Continent; 
++---------------------------------------+---------------+------------+
+| CountryName                           | Continent     | Population |
++---------------------------------------+---------------+------------+
+| Bangladesh                            | Asia          |  129155000 |
+| China                                 | Asia          | 1277558000 |
+| Indonesia                             | Asia          |  212107000 |
+| India                                 | Asia          | 1013662000 |
+| Japan                                 | Asia          |  126714000 |
+| Pakistan                              | Asia          |  156483000 |
+| Philippines                           | Asia          |   75967000 |
+| Vietnam                               | Asia          |   79832000 |
+| Germany                               | Europe        |   82164700 |
+| Spain                                 | Europe        |   39441700 |
+| France                                | Europe        |   59225700 |
+| United Kingdom                        | Europe        |   59623400 |
+| Italy                                 | Europe        |   57680000 |
+| Poland                                | Europe        |   38653600 |
+| Romania                               | Europe        |   22455500 |
+| Russian Federation                    | Europe        |  146934000 |
+| Ukraine                               | Europe        |   50456000 |
+| Canada                                | North America |   31147000 |
+| Mexico                                | North America |   98881000 |
+| United States                         | North America |  278357000 |
+| Côte d’Ivoire                         | Africa        |   14786000 |
+| Cameroon                              | Africa        |   15085000 |
+| Congo, The Democratic Republic of the | Africa        |   51654000 |
+| Algeria                               | Africa        |   31471000 |
+| Egypt                                 | Africa        |   68470000 |
+| Ethiopia                              | Africa        |   62565000 |
+| Ghana                                 | Africa        |   20212000 |
+| Kenya                                 | Africa        |   30080000 |
+| Morocco                               | Africa        |   28351000 |
+| Madagascar                            | Africa        |   15942000 |
+| Mozambique                            | Africa        |   19680000 |
+| Nigeria                               | Africa        |  111506000 |
+| Sudan                                 | Africa        |   29490000 |
+| Tanzania                              | Africa        |   33517000 |
+| Uganda                                | Africa        |   21778000 |
+| South Africa                          | Africa        |   40377000 |
+| Australia                             | Oceania       |   18886000 |
+| New Zealand                           | Oceania       |    3862000 |
+| Papua New Guinea                      | Oceania       |    4807000 |
+| Argentina                             | South America |   37032000 |
+| Brazil                                | South America |  170115000 |
+| Colombia                              | South America |   42321000 |
+| Peru                                  | South America |   25662000 |
++---------------------------------------+---------------+------------+
+43 rows in set (0.00 sec)
+
+world > 
+world > /*
+   /*> Utilizaremos la vista v_PopulationContinentStatistics para catalogar a los países según si su población supera o no al promedio de su continente.
+   /*> Si lo supera, lo indicaremos como 'Mucha Gente'.
+   /*> En caso contrario, lo indicaremos como 'Poca Gente'.
+   /*> */
+world > SELECT country.Name AS CountryName, country.Continent, 
+    ->     CASE 
+    ->         WHEN country.Population > AvgPopulation THEN 'Mucha Gente'
+    ->         ELSE 'Poca Gente'
+    ->     END AS 'Criterio'
+    -> FROM country
+    -> JOIN v_PopulationContinentStatistics AS PCS ON country.Continent = PCS.Continent
+    -> ORDER BY country.Continent;
++----------------------------------------------+---------------+-------------+
+| CountryName                                  | Continent     | Criterio    |
++----------------------------------------------+---------------+-------------+
+| Afghanistan                                  | Asia          | Poca Gente  |
+| United Arab Emirates                         | Asia          | Poca Gente  |
+| Armenia                                      | Asia          | Poca Gente  |
+| Azerbaijan                                   | Asia          | Poca Gente  |
+| Bangladesh                                   | Asia          | Mucha Gente |
+| Bahrain                                      | Asia          | Poca Gente  |
+| Brunei                                       | Asia          | Poca Gente  |
+| Bhutan                                       | Asia          | Poca Gente  |
+| China                                        | Asia          | Mucha Gente |
+| Cyprus                                       | Asia          | Poca Gente  |
+| Georgia                                      | Asia          | Poca Gente  |
+| Hong Kong                                    | Asia          | Poca Gente  |
+| Indonesia                                    | Asia          | Mucha Gente |
+| India                                        | Asia          | Mucha Gente |
+| Iran                                         | Asia          | Poca Gente  |
+| Iraq                                         | Asia          | Poca Gente  |
+| Israel                                       | Asia          | Poca Gente  |
+| Jordan                                       | Asia          | Poca Gente  |
+| Japan                                        | Asia          | Mucha Gente |
+| Kazakstan                                    | Asia          | Poca Gente  |
+| Kyrgyzstan                                   | Asia          | Poca Gente  |
+| Cambodia                                     | Asia          | Poca Gente  |
+| South Korea                                  | Asia          | Poca Gente  |
+| Kuwait                                       | Asia          | Poca Gente  |
+| Laos                                         | Asia          | Poca Gente  |
+| Lebanon                                      | Asia          | Poca Gente  |
+| Sri Lanka                                    | Asia          | Poca Gente  |
+| Macao                                        | Asia          | Poca Gente  |
+| Maldives                                     | Asia          | Poca Gente  |
+| Myanmar                                      | Asia          | Poca Gente  |
+| Mongolia                                     | Asia          | Poca Gente  |
+| Malaysia                                     | Asia          | Poca Gente  |
+| Nepal                                        | Asia          | Poca Gente  |
+| Oman                                         | Asia          | Poca Gente  |
+| Pakistan                                     | Asia          | Mucha Gente |
+| Philippines                                  | Asia          | Mucha Gente |
+| North Korea                                  | Asia          | Poca Gente  |
+| Palestine                                    | Asia          | Poca Gente  |
+| Qatar                                        | Asia          | Poca Gente  |
+| Saudi Arabia                                 | Asia          | Poca Gente  |
+| Singapore                                    | Asia          | Poca Gente  |
+| Syria                                        | Asia          | Poca Gente  |
+| Thailand                                     | Asia          | Poca Gente  |
+| Tajikistan                                   | Asia          | Poca Gente  |
+| Turkmenistan                                 | Asia          | Poca Gente  |
+| East Timor                                   | Asia          | Poca Gente  |
+| Turkey                                       | Asia          | Poca Gente  |
+| Taiwan                                       | Asia          | Poca Gente  |
+| Uzbekistan                                   | Asia          | Poca Gente  |
+| Vietnam                                      | Asia          | Mucha Gente |
+| Yemen                                        | Asia          | Poca Gente  |
+| Albania                                      | Europe        | Poca Gente  |
+| Andorra                                      | Europe        | Poca Gente  |
+| Austria                                      | Europe        | Poca Gente  |
+| Belgium                                      | Europe        | Poca Gente  |
+| Bulgaria                                     | Europe        | Poca Gente  |
+| Bosnia and Herzegovina                       | Europe        | Poca Gente  |
+| Belarus                                      | Europe        | Poca Gente  |
+| Switzerland                                  | Europe        | Poca Gente  |
+| Czech Republic                               | Europe        | Poca Gente  |
+| Germany                                      | Europe        | Mucha Gente |
+| Denmark                                      | Europe        | Poca Gente  |
+| Spain                                        | Europe        | Mucha Gente |
+| Estonia                                      | Europe        | Poca Gente  |
+| Finland                                      | Europe        | Poca Gente  |
+| France                                       | Europe        | Mucha Gente |
+| Faroe Islands                                | Europe        | Poca Gente  |
+| United Kingdom                               | Europe        | Mucha Gente |
+| Gibraltar                                    | Europe        | Poca Gente  |
+| Greece                                       | Europe        | Poca Gente  |
+| Croatia                                      | Europe        | Poca Gente  |
+| Hungary                                      | Europe        | Poca Gente  |
+| Ireland                                      | Europe        | Poca Gente  |
+| Iceland                                      | Europe        | Poca Gente  |
+| Italy                                        | Europe        | Mucha Gente |
+| Liechtenstein                                | Europe        | Poca Gente  |
+| Lithuania                                    | Europe        | Poca Gente  |
+| Luxembourg                                   | Europe        | Poca Gente  |
+| Latvia                                       | Europe        | Poca Gente  |
+| Monaco                                       | Europe        | Poca Gente  |
+| Moldova                                      | Europe        | Poca Gente  |
+| Macedonia                                    | Europe        | Poca Gente  |
+| Malta                                        | Europe        | Poca Gente  |
+| Netherlands                                  | Europe        | Poca Gente  |
+| Norway                                       | Europe        | Poca Gente  |
+| Poland                                       | Europe        | Mucha Gente |
+| Portugal                                     | Europe        | Poca Gente  |
+| Romania                                      | Europe        | Mucha Gente |
+| Russian Federation                           | Europe        | Mucha Gente |
+| Svalbard and Jan Mayen                       | Europe        | Poca Gente  |
+| San Marino                                   | Europe        | Poca Gente  |
+| Slovakia                                     | Europe        | Poca Gente  |
+| Slovenia                                     | Europe        | Poca Gente  |
+| Sweden                                       | Europe        | Poca Gente  |
+| Ukraine                                      | Europe        | Mucha Gente |
+| Holy See (Vatican City State)                | Europe        | Poca Gente  |
+| Yugoslavia                                   | Europe        | Poca Gente  |
+| Aruba                                        | North America | Poca Gente  |
+| Anguilla                                     | North America | Poca Gente  |
+| Netherlands Antilles                         | North America | Poca Gente  |
+| Antigua and Barbuda                          | North America | Poca Gente  |
+| Bahamas                                      | North America | Poca Gente  |
+| Belize                                       | North America | Poca Gente  |
+| Bermuda                                      | North America | Poca Gente  |
+| Barbados                                     | North America | Poca Gente  |
+| Canada                                       | North America | Mucha Gente |
+| Costa Rica                                   | North America | Poca Gente  |
+| Cuba                                         | North America | Poca Gente  |
+| Cayman Islands                               | North America | Poca Gente  |
+| Dominica                                     | North America | Poca Gente  |
+| Dominican Republic                           | North America | Poca Gente  |
+| Guadeloupe                                   | North America | Poca Gente  |
+| Grenada                                      | North America | Poca Gente  |
+| Greenland                                    | North America | Poca Gente  |
+| Guatemala                                    | North America | Poca Gente  |
+| Honduras                                     | North America | Poca Gente  |
+| Haiti                                        | North America | Poca Gente  |
+| Jamaica                                      | North America | Poca Gente  |
+| Saint Kitts and Nevis                        | North America | Poca Gente  |
+| Saint Lucia                                  | North America | Poca Gente  |
+| Mexico                                       | North America | Mucha Gente |
+| Montserrat                                   | North America | Poca Gente  |
+| Martinique                                   | North America | Poca Gente  |
+| Nicaragua                                    | North America | Poca Gente  |
+| Panama                                       | North America | Poca Gente  |
+| Puerto Rico                                  | North America | Poca Gente  |
+| El Salvador                                  | North America | Poca Gente  |
+| Saint Pierre and Miquelon                    | North America | Poca Gente  |
+| Turks and Caicos Islands                     | North America | Poca Gente  |
+| Trinidad and Tobago                          | North America | Poca Gente  |
+| United States                                | North America | Mucha Gente |
+| Saint Vincent and the Grenadines             | North America | Poca Gente  |
+| Virgin Islands, British                      | North America | Poca Gente  |
+| Virgin Islands, U.S.                         | North America | Poca Gente  |
+| Angola                                       | Africa        | Poca Gente  |
+| Burundi                                      | Africa        | Poca Gente  |
+| Benin                                        | Africa        | Poca Gente  |
+| Burkina Faso                                 | Africa        | Poca Gente  |
+| Botswana                                     | Africa        | Poca Gente  |
+| Central African Republic                     | Africa        | Poca Gente  |
+| Côte d’Ivoire                                | Africa        | Mucha Gente |
+| Cameroon                                     | Africa        | Mucha Gente |
+| Congo, The Democratic Republic of the        | Africa        | Mucha Gente |
+| Congo                                        | Africa        | Poca Gente  |
+| Comoros                                      | Africa        | Poca Gente  |
+| Cape Verde                                   | Africa        | Poca Gente  |
+| Djibouti                                     | Africa        | Poca Gente  |
+| Algeria                                      | Africa        | Mucha Gente |
+| Egypt                                        | Africa        | Mucha Gente |
+| Eritrea                                      | Africa        | Poca Gente  |
+| Western Sahara                               | Africa        | Poca Gente  |
+| Ethiopia                                     | Africa        | Mucha Gente |
+| Gabon                                        | Africa        | Poca Gente  |
+| Ghana                                        | Africa        | Mucha Gente |
+| Guinea                                       | Africa        | Poca Gente  |
+| Gambia                                       | Africa        | Poca Gente  |
+| Guinea-Bissau                                | Africa        | Poca Gente  |
+| Equatorial Guinea                            | Africa        | Poca Gente  |
+| British Indian Ocean Territory               | Africa        | Poca Gente  |
+| Kenya                                        | Africa        | Mucha Gente |
+| Liberia                                      | Africa        | Poca Gente  |
+| Libyan Arab Jamahiriya                       | Africa        | Poca Gente  |
+| Lesotho                                      | Africa        | Poca Gente  |
+| Morocco                                      | Africa        | Mucha Gente |
+| Madagascar                                   | Africa        | Mucha Gente |
+| Mali                                         | Africa        | Poca Gente  |
+| Mozambique                                   | Africa        | Mucha Gente |
+| Mauritania                                   | Africa        | Poca Gente  |
+| Mauritius                                    | Africa        | Poca Gente  |
+| Malawi                                       | Africa        | Poca Gente  |
+| Mayotte                                      | Africa        | Poca Gente  |
+| Namibia                                      | Africa        | Poca Gente  |
+| Niger                                        | Africa        | Poca Gente  |
+| Nigeria                                      | Africa        | Mucha Gente |
+| Réunion                                      | Africa        | Poca Gente  |
+| Rwanda                                       | Africa        | Poca Gente  |
+| Sudan                                        | Africa        | Mucha Gente |
+| Senegal                                      | Africa        | Poca Gente  |
+| Saint Helena                                 | Africa        | Poca Gente  |
+| Sierra Leone                                 | Africa        | Poca Gente  |
+| Somalia                                      | Africa        | Poca Gente  |
+| Sao Tome and Principe                        | Africa        | Poca Gente  |
+| Swaziland                                    | Africa        | Poca Gente  |
+| Seychelles                                   | Africa        | Poca Gente  |
+| Chad                                         | Africa        | Poca Gente  |
+| Togo                                         | Africa        | Poca Gente  |
+| Tunisia                                      | Africa        | Poca Gente  |
+| Tanzania                                     | Africa        | Mucha Gente |
+| Uganda                                       | Africa        | Mucha Gente |
+| South Africa                                 | Africa        | Mucha Gente |
+| Zambia                                       | Africa        | Poca Gente  |
+| Zimbabwe                                     | Africa        | Poca Gente  |
+| American Samoa                               | Oceania       | Poca Gente  |
+| Australia                                    | Oceania       | Mucha Gente |
+| Cocos (Keeling) Islands                      | Oceania       | Poca Gente  |
+| Cook Islands                                 | Oceania       | Poca Gente  |
+| Christmas Island                             | Oceania       | Poca Gente  |
+| Fiji Islands                                 | Oceania       | Poca Gente  |
+| Micronesia, Federated States of              | Oceania       | Poca Gente  |
+| Guam                                         | Oceania       | Poca Gente  |
+| Kiribati                                     | Oceania       | Poca Gente  |
+| Marshall Islands                             | Oceania       | Poca Gente  |
+| Northern Mariana Islands                     | Oceania       | Poca Gente  |
+| New Caledonia                                | Oceania       | Poca Gente  |
+| Norfolk Island                               | Oceania       | Poca Gente  |
+| Niue                                         | Oceania       | Poca Gente  |
+| Nauru                                        | Oceania       | Poca Gente  |
+| New Zealand                                  | Oceania       | Mucha Gente |
+| Pitcairn                                     | Oceania       | Poca Gente  |
+| Palau                                        | Oceania       | Poca Gente  |
+| Papua New Guinea                             | Oceania       | Mucha Gente |
+| French Polynesia                             | Oceania       | Poca Gente  |
+| Solomon Islands                              | Oceania       | Poca Gente  |
+| Tokelau                                      | Oceania       | Poca Gente  |
+| Tonga                                        | Oceania       | Poca Gente  |
+| Tuvalu                                       | Oceania       | Poca Gente  |
+| United States Minor Outlying Islands         | Oceania       | Poca Gente  |
+| Vanuatu                                      | Oceania       | Poca Gente  |
+| Wallis and Futuna                            | Oceania       | Poca Gente  |
+| Samoa                                        | Oceania       | Poca Gente  |
+| Antarctica                                   | Antarctica    | Poca Gente  |
+| French Southern territories                  | Antarctica    | Poca Gente  |
+| Bouvet Island                                | Antarctica    | Poca Gente  |
+| Heard Island and McDonald Islands            | Antarctica    | Poca Gente  |
+| South Georgia and the South Sandwich Islands | Antarctica    | Poca Gente  |
+| Argentina                                    | South America | Mucha Gente |
+| Bolivia                                      | South America | Poca Gente  |
+| Brazil                                       | South America | Mucha Gente |
+| Chile                                        | South America | Poca Gente  |
+| Colombia                                     | South America | Mucha Gente |
+| Ecuador                                      | South America | Poca Gente  |
+| Falkland Islands                             | South America | Poca Gente  |
+| French Guiana                                | South America | Poca Gente  |
+| Guyana                                       | South America | Poca Gente  |
+| Peru                                         | South America | Mucha Gente |
+| Paraguay                                     | South America | Poca Gente  |
+| Suriname                                     | South America | Poca Gente  |
+| Uruguay                                      | South America | Poca Gente  |
+| Venezuela                                    | South America | Poca Gente  |
++----------------------------------------------+---------------+-------------+
+239 rows in set (0.00 sec)
+
+world > -- Con este ejemplo mostramos una de las utilidades de las vistas:
+world > -- Simplifica la obtención de consultas repetitivas al definir vistas cuyos queries sean de uso común o recurrente.
+world > -- En la vista v_PopulationContinentStatistics guardamos el query que genera información estadística que puede ser de uso recurrente.
+world > 
+world > -- Ejemplo 3
+world > /*
+   /*> Creamos una vista para listar los países de un continente en específico.
+   /*> Nos interesa mostrar el nombre del país, su población y área superficial de los países de América del Sur.
+   /*> */
+world > CREATE OR REPLACE VIEW v_SouthAmericaCountries AS
+    -> SELECT Name AS CountryName, Population, LPAD(FORMAT(SurfaceArea, 0), LENGTH('SurfaceArea (km^2)'), ' ') AS 'SurfaceArea (km^2)'
+    -> FROM country
+    -> WHERE Continent = 'South America';
+Query OK, 0 rows affected (0.01 sec)
+
+world > -- Esta vista almacena una consulta que nos duelve el área superficial con formato.
+world > SELECT * FROM v_SouthAmericaCountries;
++------------------+------------+--------------------+
+| CountryName      | Population | SurfaceArea (km^2) |
++------------------+------------+--------------------+
+| Argentina        |   37032000 |          2,780,400 |
+| Bolivia          |    8329000 |          1,098,581 |
+| Brazil           |  170115000 |          8,547,403 |
+| Chile            |   15211000 |            756,626 |
+| Colombia         |   42321000 |          1,138,914 |
+| Ecuador          |   12646000 |            283,561 |
+| Falkland Islands |       2000 |             12,173 |
+| French Guiana    |     181000 |             90,000 |
+| Guyana           |     861000 |            214,969 |
+| Peru             |   25662000 |          1,285,216 |
+| Paraguay         |    5496000 |            406,752 |
+| Suriname         |     417000 |            163,265 |
+| Uruguay          |    3337000 |            175,016 |
+| Venezuela        |   24170000 |            912,050 |
++------------------+------------+--------------------+
+14 rows in set (0.00 sec)
+
+world > -- ¿Cómo seleccionamos columnas cuyos nombres tienen espacios?
+world > -- R: Empleamos la tílde invertida (`)
+world > SELECT CountryName, `SurfaceArea (km^2)` FROM v_SouthAmericaCountries;
++------------------+--------------------+
+| CountryName      | SurfaceArea (km^2) |
++------------------+--------------------+
+| Argentina        |          2,780,400 |
+| Bolivia          |          1,098,581 |
+| Brazil           |          8,547,403 |
+| Chile            |            756,626 |
+| Colombia         |          1,138,914 |
+| Ecuador          |            283,561 |
+| Falkland Islands |             12,173 |
+| French Guiana    |             90,000 |
+| Guyana           |            214,969 |
+| Peru             |          1,285,216 |
+| Paraguay         |            406,752 |
+| Suriname         |            163,265 |
+| Uruguay          |            175,016 |
+| Venezuela        |            912,050 |
++------------------+--------------------+
+14 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 4
+world > /*
+   /*> Creamos una vista con subconsultas.
+   /*> Nos interesa conocer el número de ciudades de los países que están registrados en la tabla `country`.
+   /*> En caso de faltar algún dato, indicarlo con N/A.
+   /*> */
+world > CREATE OR REPLACE VIEW v_CitiesXCountry AS
+    -> SELECT Name AS CountryName, IFNULL(CityCount, 'N/A') AS CityCount
+    -> FROM country
+    -> LEFT JOIN (SELECT CountryCode, COUNT(*) AS CityCount FROM city GROUP BY 1) AS R ON Code = CountryCode 
+    -> ORDER BY R.CityCount;
+Query OK, 0 rows affected (0.01 sec)
+
+world > -- Esta vista almacena una consulta que nos indica con N/A los países que no tienen ciudades registradas en la tabla `city`.
+world > SELECT * FROM v_CitiesXCountry;
++----------------------------------------------+-----------+
+| CountryName                                  | CityCount |
++----------------------------------------------+-----------+
+| Antarctica                                   | N/A       |
+| French Southern territories                  | N/A       |
+| Bouvet Island                                | N/A       |
+| Heard Island and McDonald Islands            | N/A       |
+| British Indian Ocean Territory               | N/A       |
+| South Georgia and the South Sandwich Islands | N/A       |
+| United States Minor Outlying Islands         | N/A       |
+| Aruba                                        | 1         |
+| Albania                                      | 1         |
+| Andorra                                      | 1         |
+| Netherlands Antilles                         | 1         |
+| Antigua and Barbuda                          | 1         |
+| Burundi                                      | 1         |
+| Bahrain                                      | 1         |
+| Bahamas                                      | 1         |
+| Barbados                                     | 1         |
+| Brunei                                       | 1         |
+| Bhutan                                       | 1         |
+| Central African Republic                     | 1         |
+| Cook Islands                                 | 1         |
+| Comoros                                      | 1         |
+| Cape Verde                                   | 1         |
+| Costa Rica                                   | 1         |
+| Christmas Island                             | 1         |
+| Cayman Islands                               | 1         |
+| Djibouti                                     | 1         |
+| Dominica                                     | 1         |
+| Eritrea                                      | 1         |
+| Western Sahara                               | 1         |
+| Fiji Islands                                 | 1         |
+| Falkland Islands                             | 1         |
+| Faroe Islands                                | 1         |
+| Gabon                                        | 1         |
+| Gibraltar                                    | 1         |
+| Guinea                                       | 1         |
+| Guinea-Bissau                                | 1         |
+| Equatorial Guinea                            | 1         |
+| Grenada                                      | 1         |
+| Greenland                                    | 1         |
+| French Guiana                                | 1         |
+| Guyana                                       | 1         |
+| Iceland                                      | 1         |
+| Saint Kitts and Nevis                        | 1         |
+| Liberia                                      | 1         |
+| Saint Lucia                                  | 1         |
+| Lesotho                                      | 1         |
+| Luxembourg                                   | 1         |
+| Macao                                        | 1         |
+| Maldives                                     | 1         |
+| Marshall Islands                             | 1         |
+| Macedonia                                    | 1         |
+| Mali                                         | 1         |
+| Mongolia                                     | 1         |
+| Northern Mariana Islands                     | 1         |
+| Montserrat                                   | 1         |
+| Martinique                                   | 1         |
+| Mayotte                                      | 1         |
+| Namibia                                      | 1         |
+| New Caledonia                                | 1         |
+| Norfolk Island                               | 1         |
+| Niue                                         | 1         |
+| Pitcairn                                     | 1         |
+| Palau                                        | 1         |
+| Papua New Guinea                             | 1         |
+| Qatar                                        | 1         |
+| Réunion                                      | 1         |
+| Rwanda                                       | 1         |
+| Singapore                                    | 1         |
+| Saint Helena                                 | 1         |
+| Svalbard and Jan Mayen                       | 1         |
+| Solomon Islands                              | 1         |
+| Sierra Leone                                 | 1         |
+| Saint Pierre and Miquelon                    | 1         |
+| Sao Tome and Principe                        | 1         |
+| Suriname                                     | 1         |
+| Swaziland                                    | 1         |
+| Seychelles                                   | 1         |
+| Turks and Caicos Islands                     | 1         |
+| Togo                                         | 1         |
+| Tokelau                                      | 1         |
+| East Timor                                   | 1         |
+| Tonga                                        | 1         |
+| Tuvalu                                       | 1         |
+| Uganda                                       | 1         |
+| Uruguay                                      | 1         |
+| Holy See (Vatican City State)                | 1         |
+| Saint Vincent and the Grenadines             | 1         |
+| Virgin Islands, British                      | 1         |
+| Virgin Islands, U.S.                         | 1         |
+| Vanuatu                                      | 1         |
+| Wallis and Futuna                            | 1         |
+| Samoa                                        | 1         |
+| Anguilla                                     | 2         |
+| American Samoa                               | 2         |
+| Belize                                       | 2         |
+| Bermuda                                      | 2         |
+| Botswana                                     | 2         |
+| Cocos (Keeling) Islands                      | 2         |
+| Congo                                        | 2         |
+| Cyprus                                       | 2         |
+| Estonia                                      | 2         |
+| Micronesia, Federated States of              | 2         |
+| Guadeloupe                                   | 2         |
+| Gambia                                       | 2         |
+| Guam                                         | 2         |
+| Hong Kong                                    | 2         |
+| Ireland                                      | 2         |
+| Kyrgyzstan                                   | 2         |
+| Kiribati                                     | 2         |
+| Laos                                         | 2         |
+| Lebanon                                      | 2         |
+| Liechtenstein                                | 2         |
+| Monaco                                       | 2         |
+| Malta                                        | 2         |
+| Mauritania                                   | 2         |
+| Malawi                                       | 2         |
+| Nauru                                        | 2         |
+| Panama                                       | 2         |
+| French Polynesia                             | 2         |
+| San Marino                                   | 2         |
+| Slovenia                                     | 2         |
+| Chad                                         | 2         |
+| Tajikistan                                   | 2         |
+| Trinidad and Tobago                          | 2         |
+| Armenia                                      | 3         |
+| Burkina Faso                                 | 3         |
+| Bosnia and Herzegovina                       | 3         |
+| Honduras                                     | 3         |
+| Jamaica                                      | 3         |
+| Cambodia                                     | 3         |
+| Kuwait                                       | 3         |
+| Latvia                                       | 3         |
+| Mauritius                                    | 3         |
+| Niger                                        | 3         |
+| Somalia                                      | 3         |
+| Slovakia                                     | 3         |
+| Afghanistan                                  | 4         |
+| Azerbaijan                                   | 4         |
+| Benin                                        | 4         |
+| Guatemala                                    | 4         |
+| Croatia                                      | 4         |
+| Haiti                                        | 4         |
+| Libyan Arab Jamahiriya                       | 4         |
+| Moldova                                      | 4         |
+| Nicaragua                                    | 4         |
+| Turkmenistan                                 | 4         |
+| Angola                                       | 5         |
+| United Arab Emirates                         | 5         |
+| Switzerland                                  | 5         |
+| Côte d’Ivoire                                | 5         |
+| Denmark                                      | 5         |
+| Georgia                                      | 5         |
+| Ghana                                        | 5         |
+| Jordan                                       | 5         |
+| Lithuania                                    | 5         |
+| Madagascar                                   | 5         |
+| Norway                                       | 5         |
+| Nepal                                        | 5         |
+| Oman                                         | 5         |
+| Portugal                                     | 5         |
+| Paraguay                                     | 5         |
+| Austria                                      | 6         |
+| Dominican Republic                           | 6         |
+| Palestine                                    | 6         |
+| Yemen                                        | 6         |
+| Zimbabwe                                     | 6         |
+| Cameroon                                     | 7         |
+| Ethiopia                                     | 7         |
+| Finland                                      | 7         |
+| Sri Lanka                                    | 7         |
+| El Salvador                                  | 7         |
+| Zambia                                       | 7         |
+| Bolivia                                      | 8         |
+| Greece                                       | 8         |
+| Kenya                                        | 8         |
+| Tunisia                                      | 8         |
+| Yugoslavia                                   | 8         |
+| Belgium                                      | 9         |
+| Hungary                                      | 9         |
+| New Zealand                                  | 9         |
+| Puerto Rico                                  | 9         |
+| Senegal                                      | 9         |
+| Bulgaria                                     | 10        |
+| Czech Republic                               | 10        |
+| Tanzania                                     | 10        |
+| Syria                                        | 11        |
+| Mozambique                                   | 12        |
+| Sudan                                        | 12        |
+| Thailand                                     | 12        |
+| North Korea                                  | 13        |
+| Australia                                    | 14        |
+| Cuba                                         | 14        |
+| Israel                                       | 14        |
+| Ecuador                                      | 15        |
+| Iraq                                         | 15        |
+| Sweden                                       | 15        |
+| Belarus                                      | 16        |
+| Myanmar                                      | 16        |
+| Uzbekistan                                   | 17        |
+| Congo, The Democratic Republic of the        | 18        |
+| Algeria                                      | 18        |
+| Malaysia                                     | 18        |
+| Kazakstan                                    | 21        |
+| Morocco                                      | 22        |
+| Peru                                         | 22        |
+| Vietnam                                      | 22        |
+| Bangladesh                                   | 24        |
+| Saudi Arabia                                 | 24        |
+| Netherlands                                  | 28        |
+| Chile                                        | 29        |
+| Romania                                      | 29        |
+| Egypt                                        | 37        |
+| Colombia                                     | 38        |
+| France                                       | 40        |
+| Venezuela                                    | 41        |
+| Taiwan                                       | 42        |
+| Poland                                       | 44        |
+| South Africa                                 | 44        |
+| Canada                                       | 49        |
+| Argentina                                    | 57        |
+| Ukraine                                      | 57        |
+| Italy                                        | 58        |
+| Spain                                        | 59        |
+| Pakistan                                     | 59        |
+| Turkey                                       | 62        |
+| Nigeria                                      | 64        |
+| Iran                                         | 67        |
+| South Korea                                  | 70        |
+| United Kingdom                               | 81        |
+| Indonesia                                    | 85        |
+| Germany                                      | 93        |
+| Philippines                                  | 136       |
+| Mexico                                       | 173       |
+| Russian Federation                           | 189       |
+| Japan                                        | 248       |
+| Brazil                                       | 250       |
+| United States                                | 274       |
+| India                                        | 341       |
+| China                                        | 363       |
++----------------------------------------------+-----------+
+239 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 5
+world > /*
+   /*> A partir de la vista anterior (v_CitiesXCountry) obtener los países que no tienen ciudades registradas.
+   /*> */
+world > SELECT * FROM v_CitiesXCountry WHERE CityCount = 'N/A';
++----------------------------------------------+-----------+
+| CountryName                                  | CityCount |
++----------------------------------------------+-----------+
+| Antarctica                                   | N/A       |
+| French Southern territories                  | N/A       |
+| Bouvet Island                                | N/A       |
+| Heard Island and McDonald Islands            | N/A       |
+| British Indian Ocean Territory               | N/A       |
+| South Georgia and the South Sandwich Islands | N/A       |
+| United States Minor Outlying Islands         | N/A       |
++----------------------------------------------+-----------+
+7 rows in set (0.00 sec)
+
+world > -- Este ejemplo junto con el anterior mostramos otra de las utilidades de las vistas:
+world > -- Simplifica la obtención de consultas que involucren queries complejos. Ya no es necesario volver a escribir el query definido en la vista.
+world > 
+world > -- Ejemplo 6
+world > /*
+   /*> Queremos una vista que muestre el nombre del país, su continente, las ciudades que lo componen en un arreglo JSON y generar un objeto JSON tal que
+   /*> las llaves sean el idioma y los valores la indicación de si el idioma es oficial 'T' o no lo es 'F', tal como se indica en la columna `IsOfficial`,
+   /*> de los países que cuenten con registro tanto en `city` como en `countrylanguage`.
+   /*> */
+world > CREATE OR REPLACE VIEW v_JSON_OBJJ_Country AS
+    -> SELECT 
+    ->     B.Name AS CountryName,
+    ->     B.Continent,
+    ->     JSON_ARRAYAGG(C.Name) AS CityArray,
+    ->     D.LanguageObject
+    -> FROM
+    ->     country AS B 
+    -> JOIN
+    ->     city AS C ON B.Code = C.CountryCode
+    -> JOIN
+    ->     (SELECT 
+    ->         CountryCode,
+    ->         JSON_OBJECTAGG(Language, IsOfficial) AS LanguageObject
+    ->     FROM
+    ->         countrylanguage
+    ->     GROUP BY CountryCode) AS D ON B.Code = D.CountryCode
+    -> GROUP BY B.Code;
+Query OK, 0 rows affected (0.00 sec)
+
+world > -- Ya teniendo la vista creada es fácil obtener la consulta de cada país simplemente haciendo un WHERE.
+world > SELECT * FROM v_JSON_OBJJ_Country WHERE CountryName = 'mexico'\G
+*************************** 1. row ***************************
+   CountryName: Mexico
+     Continent: North America
+     CityArray: ["Ciudad de México", "Guadalajara", "Ecatepec de Morelos", "Puebla", "Nezahualcóyotl", "Juárez", "Tijuana", "León", "Monterrey", "Zapopan", "Naucalpan de Juárez", "Mexicali", "Culiacán", "Acapulco de Juárez", "Tlalnepantla de Baz", "Mérida", "Chihuahua", "San Luis Potosí", "Guadalupe", "Toluca", "Aguascalientes", "Querétaro", "Morelia", "Hermosillo", "Saltillo", "Torreón", "Centro (Villahermosa)", "San Nicolás de los Garza", "Durango", "Chimalhuacán", "Tlaquepaque", "Atizapán de Zaragoza", "Veracruz", "Cuautitlán Izcalli", "Irapuato", "Tuxtla Gutiérrez", "Tultitlán", "Reynosa", "Benito Juárez", "Matamoros", "Xalapa", "Celaya", "Mazatlán", "Ensenada", "Ahome", "Cajeme", "Cuernavaca", "Tonalá", "Valle de Chalco Solidaridad", "Nuevo Laredo", "Tepic", "Tampico", "Ixtapaluca", "Apodaca", "Guasave", "Gómez Palacio", "Tapachula", "Nicolás Romero", "Coatzacoalcos", "Uruapan", "Victoria", "Oaxaca de Juárez", "Coacalco de Berriozábal", "Pachuca de Soto", "General Escobedo", "Salamanca", "Santa Catarina", "Tehuacán", "Chalco", "Cárdenas", "Campeche", "La Paz", "Othón P. Blanco (Chetumal)", "Texcoco", "La Paz", "Metepec", "Monclova", "Huixquilucan", "Chilpancingo de los Bravo", "Puerto Vallarta", "Fresnillo", "Ciudad Madero", "Soledad de Graciano Sánchez", "San Juan del Río", "San Felipe del Progreso", "Córdoba", "Tecámac", "Ocosingo", "Carmen", "Lázaro Cárdenas", "Jiutepec", "Papantla", "Comalcalco", "Zamora", "Nogales", "Huimanguillo", "Cuautla", "Minatitlán", "Poza Rica de Hidalgo", "Ciudad Valles", "Navolato", "San Luis Río Colorado", "Pénjamo", "San Andrés Tuxtla", "Guanajuato", "Navojoa", "Zitácuaro", "Boca del Río", "Allende", "Silao", "Macuspana", "San Juan Bautista Tuxtepec", "San Cristóbal de las Casas", "Valle de Santiago", "Guaymas", "Colima", "Dolores Hidalgo", "Lagos de Moreno", "Piedras Negras", "Altamira", "Túxpam", "San Pedro Garza García", "Cuauhtémoc", "Manzanillo", "Iguala de la Independencia", "Zacatecas", "Tlajomulco de Zúñiga", "Tulancingo de Bravo", "Zinacantepec", "San Martín Texmelucan", "Tepatitlán de Morelos", "Martínez de la Torre", "Orizaba", "Apatzingán", "Atlixco", "Delicias", "Ixtlahuaca", "El Mante", "Lerdo", "Almoloya de Juárez", "Acámbaro", "Acuña", "Guadalupe", "Huejutla de Reyes", "Hidalgo", "Los Cabos", "Comitán de Domínguez", "Cunduacán", "Río Bravo", "Temapache", "Chilapa de Alvarez", "Hidalgo del Parral", "San Francisco del Rincón", "Taxco de Alarcón", "Zumpango", "San Pedro Cholula", "Lerma", "Tecomán", "Las Margaritas", "Cosoleacaque", "San Luis de la Paz", "José Azueta", "Santiago Ixcuintla", "San Felipe", "Tejupilco", "Tantoyuca", "Salvatierra", "Tultepec", "Temixco", "Matamoros", "Pánuco", "El Fuerte", "Tierra Blanca"]
+LanguageObject: {"Mixtec": "F", "Otomí": "F", "Spanish": "T", "Yucatec": "F", "Zapotec": "F", "Náhuatl": "F"}
+1 row in set (0.01 sec)
+
+world > SELECT * FROM v_JSON_OBJJ_Country WHERE CountryName = 'jamaica'\G
+*************************** 1. row ***************************
+   CountryName: Jamaica
+     Continent: North America
+     CityArray: ["Spanish Town", "Kingston", "Portmore"]
+LanguageObject: {"Hindi": "F", "Creole English": "F"}
+1 row in set (0.01 sec)
+
+world > SELECT * FROM v_JSON_OBJJ_Country WHERE CountryName = 'peru'\G
+*************************** 1. row ***************************
+   CountryName: Peru
+     Continent: South America
+     CityArray: ["Lima", "Arequipa", "Trujillo", "Chiclayo", "Callao", "Iquitos", "Chimbote", "Huancayo", "Piura", "Cusco", "Pucallpa", "Tacna", "Ica", "Sullana", "Juliaca", "Huánuco", "Ayacucho", "Chincha Alta", "Cajamarca", "Puno", "Ventanilla", "Castilla"]
+LanguageObject: {"Aimará": "T", "Ketšua": "T", "Spanish": "T"}
+1 row in set (0.01 sec)
+
+world > 
+world > /*
+   /*> Borramos de forma segura las vistas creadas.
+   /*> */
+world > DROP VIEW IF EXISTS v_PopulationContinentStatistics, v_SouthAmericaCountries, v_CitiesXCountry, v_JSON_OBJJ_Country;
+Query OK, 0 rows affected (0.01 sec)
+
+world > notee
