@@ -113,7 +113,7 @@ SELECT '50', evaluacion(50);
 /*
 Función que calcula el factorial de un número no negativo.
 */
-DROP FUNCTION IS NOT EXISTS factorial;
+DROP FUNCTION IF EXISTS factorial;
 
 DELIMITER ##
 
