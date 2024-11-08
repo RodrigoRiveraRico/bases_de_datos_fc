@@ -13,7 +13,7 @@ Rodrigo Baruch Rivera Rico
 /*
 Funciones en MySQL
 >   Es un bloque de código que realiza una tarea específica y devuelve un único valor.
->   Característica:
+>   Características:
     *   A diferencia de los procedimineto almacenado, las funciones siempre deben devolver un único valor.
     *   Son útiles para realizar cálculos o transformar datos en una consulta SQL.
     *   Dentro de las funciones se pueden declarar variables y usar estructuras de control como IF, CASE, LOOP, WHILE y REPEAT.
@@ -197,7 +197,6 @@ DETERMINISTIC
 BEGIN
     DECLARE langs TINYTEXT;
 
-    
     SELECT GROUP_CONCAT(CONCAT(Language, ' (', Percentage, '%', ')') ORDER BY Percentage DESC SEPARATOR ', ') INTO langs   
     -- Con INTO asignamos el resultado del SELECT a la variable que definimos como langs.
     -- IMPORTANTE: Solo se puede asignar con INTO un único valor a la variable definida. 
@@ -216,4 +215,17 @@ SELECT Name, IFNULL(OfficialLanguages(Code), 'No hay registro') AS 'OfficialLang
 -- Obsérvese que la función nos puede devolver nulos para algunos países.
 -- Lo anterior es debido a uno de los dos siguientes casos:
 -- 1) No hay registros del país en la tabla `countrylanguage`.
--- 2) Sí hay registros del país en la tabla `countrylanguage`, pero ningún idioma registrado es oficial (IsOfficial = 'T').
+-- 2) Sí hay registros del país en la tabla `countrylanguage`, pero ningún idioma registrado es oficial, es decir, IsOfficial = 'F'.
+
+
+-- Ejemplo 8
+/*
+Mostraremos el nombre de la funciones creadas en la base de datos world.
+*/
+SELECT SPECIFIC_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'world' AND ROUTINE_TYPE = 'FUNCTION';
+
+-- Ejemplo 9
+/*
+Para ver el código de alguna función creada ejecutamos lo siguiente, cambiando el nombre de la función en cuestión en la cláusula WHERE.
+*/
+SELECT ROUTINE_DEFINITION FROM information_schema.ROUTINES WHERE SPECIFIC_NAME = 'cuadrado';
