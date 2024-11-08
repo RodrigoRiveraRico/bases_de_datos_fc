@@ -169,7 +169,48 @@ DELIMITER ;
 -- Llamamos a la función `suma`.
 SELECT suma(5) AS 'La suma de 1+2+3+4+5 es:';
 
--- Ejemplo 6 (Funciones aplicadas a tablas)
+-- Ejemplo 6 (REPEAT)
+/*
+Función que hace una cuenta regresiva desde N hasta 1.
+*/
+DROP FUNCTION IF EXISTS cuenta_regresiva;
+
+DELIMITER ??
+
+CREATE FUNCTION cuenta_regresiva(N INT UNSIGNED)
+RETURNS TEXT
+DETERMINISTIC
+BEGIN
+    DECLARE resultado TEXT DEFAULT '';
+    DECLARE contador INT UNSIGNED DEFAULT N;
+
+    REPEAT
+        SET resultado = CONCAT(resultado, contador, ' ');
+        SET contador = contador - 1;
+    UNTIL contador = 0
+    END REPEAT;
+
+    RETURN TRIM(resultado);
+END ??
+
+DELIMITER ;
+
+-- Llamamos a la función `cuenta_regresiva`.
+SELECT cuenta_regresiva(100) AS 'Cuenta regresiva desde el número 100'\G
+
+/*
+Diferencia entre LOOP y REPEAT:
+>   LOOP
+    *   Ejecuta el bloque de instrucciones indefinidamente hasta que se cumpla una condición para salir del bucle. 
+    *   No tiene una condición de salida incorporada; es necesario usar IF y LEAVE para salir del bucle.
+    *   Es útil cuando deseas un control completo sobre cuándo y cómo salir del bucle, ya que la salida se puede colocar en cualquier parte dentro del bucle.
+>   REPEAT 
+    *   Ejecuta el bloque de instrucciones al menos una vez, y luego evalúa la condición de salida. 
+        Si la condición es FALSE, se repite el bloque; si es TRUE, se sale del bucle.
+    *   Es útil cuando se necesita ejecutar el bloque al menos una vez y evaluar la condición de salida después de cada iteración.
+*/
+
+-- Ejemplo 7 (Funciones aplicadas a tablas)
 /*
 Crearemos una función para convertir en millones la población de los países (tabla `country`).
 */
@@ -183,7 +224,7 @@ RETURN TRUNCATE(pop / 1000000, 0);
 -- Llamamos a la función `PopulationInMillions`.
 SELECT Name, PopulationInMillions(Population) FROM country ORDER BY 2 DESC LIMIT 10;
 
--- Ejemplo 7 (Funciones con SELECT)
+-- Ejemplo 8 (Funciones con SELECT)
 /*
 Crearemos una función que toma el código de un país y devuelve sus idiomas oficiales junto con el procentaje de hablantes.
 */
@@ -217,15 +258,26 @@ SELECT Name, IFNULL(OfficialLanguages(Code), 'No hay registro') AS 'OfficialLang
 -- 1) No hay registros del país en la tabla `countrylanguage`.
 -- 2) Sí hay registros del país en la tabla `countrylanguage`, pero ningún idioma registrado es oficial, es decir, IsOfficial = 'F'.
 
-
--- Ejemplo 8
+-- Ejemplo 9
 /*
 Mostraremos el nombre de la funciones creadas en la base de datos world.
 */
 SELECT SPECIFIC_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'world' AND ROUTINE_TYPE = 'FUNCTION';
 
--- Ejemplo 9
+-- Ejemplo 10
 /*
 Para ver el código de alguna función creada ejecutamos lo siguiente, cambiando el nombre de la función en cuestión en la cláusula WHERE.
 */
 SELECT ROUTINE_DEFINITION FROM information_schema.ROUTINES WHERE SPECIFIC_NAME = 'cuadrado';
+
+/*
+Borramos de forma segura las funciones creadas.
+*/
+DROP FUNCTION IF EXISTS cuadrado;
+DROP FUNCTION IF EXISTS esPar;
+DROP FUNCTION IF EXISTS evaluacion;
+DROP FUNCTION IF EXISTS factorial;
+DROP FUNCTION IF EXISTS suma;
+DROP FUNCTION IF EXISTS cuenta_regresiva;
+DROP FUNCTION IF EXISTS PopulationInMillions;
+DROP FUNCTION IF EXISTS OfficialLanguages;
