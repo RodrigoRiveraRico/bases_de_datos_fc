@@ -1,0 +1,431 @@
+world > /*
+   /*> =================================
+   /*> Ayudantía 23: Funciones
+   /*> Rodrigo Baruch Rivera Rico
+   /*> 08 noviembre 2024
+   /*> =================================
+   /*> */
+world > 
+world > -- Antes de empezar: cargar la base world y ponerla en uso
+world > -- \. path\to\script\base_world.sql
+world > -- \u world
+world > 
+world > /*
+   /*> Funciones en MySQL
+   /*> >   Es un bloque de código que realiza una tarea específica y devuelve un único valor.
+   /*> >   Características:
+   /*>     *   A diferencia de los procedimineto almacenado, las funciones siempre deben devolver un único valor.
+   /*>     *   Son útiles para realizar cálculos o transformar datos en una consulta SQL.
+   /*>     *   Dentro de las funciones se pueden declarar variables y usar estructuras de control como IF, CASE, LOOP, WHILE y REPEAT.
+   /*>     *   Las funciones pueden ser DETERMINISTIC o NOT DETERMINISTIC:
+   /*>         ~   DETERMINISTIC cuando se quiere que la función devuelva el mismo valor para los mismos parámetros de entrada.
+   /*>             Esto permite a MySQL optimizar el rendimiento almacenando resultados en caché.
+   /*>         ~   NOT DETERMINISTIC podría devolver resultados distintos con los mismos parámetros de entrada.
+   /*>             Esto se emplea cuando la función depende de factores externos,
+   /*>             como puede ser la dependencia con la fecha actual cuando esta se emplea en la función.
+   /*>     *   Las funciones pueden ser llamadas en SELECT, WHERE, ORDER BY, en otras funciones o precedimientos.
+   /*> >   IMPORTANTE: 
+   /*>     *   Por default, las funciones (y los procedimientos almacenados) están asociados con la base de datos en uso.
+   /*>     *   Hay que ser consistentes con el tipo de dato definido para la entrada y salida de la función para que MySQL no devuelva ERROR.   
+   /*> */
+world > 
+world > -- Ejemplo 1 (Declaración de variables)
+world > /*
+   /*> Función que calcula el cuadrado de un número dado.
+   /*> */
+world > DROP FUNCTION IF EXISTS cuadrado;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > -- Cambiamos el delimitador para que el bloque de código dentro del cuerpo BEGIN...END no se ejecute al finalizar con punto y coma cada declaración.
+world > DELIMITER // 
+world > 
+world > CREATE FUNCTION IF NOT EXISTS cuadrado(num INT)
+    -> RETURNS INT
+    -> DETERMINISTIC
+    -> BEGIN 
+    ->     DECLARE resultado INT;
+    ->     SET resultado = POWER(num, 2);
+    ->     RETURN resultado;
+    -> END //
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Regresamos al delimitador de punto y coma para ejecutar consultas de forma ordinaria.
+world > DELIMITER ;
+world > 
+world > -- Llamamos a la función `cuadrado`.
+world > SELECT cuadrado(5) AS 'El cuadrado de 5 es:', cuadrado(-10) AS 'El cuadrado de -10 es:';
++----------------------+------------------------+
+| El cuadrado de 5 es: | El cuadrado de -10 es: |
++----------------------+------------------------+
+|                   25 |                    100 |
++----------------------+------------------------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 2 (IF)
+world > /*
+   /*> Función que determina si un número es par o impar.
+   /*> */
+world > DROP FUNCTION IF EXISTS esPar;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER $$
+world > 
+world > CREATE FUNCTION IF NOT EXISTS esPar(num INT)
+    -> RETURNS VARCHAR(10)
+    -> DETERMINISTIC
+    -> BEGIN
+    ->     IF (num % 2 = 0) THEN
+    ->         RETURN 'Par';
+    ->     ELSE
+    ->         RETURN 'Impar';
+    ->     END IF;   
+    -> END $$
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > DELIMITER ;
+world > 
+world > -- Llamamos a la función `esPar`.
+world > SELECT esPar(5) AS 'El número 5 es:', esPar(20) AS 'El número 20 es:', esPar(0) AS 'El número 0 es:';
++------------------+-------------------+------------------+
+| El número 5 es:  | El número 20 es:  | El número 0 es:  |
++------------------+-------------------+------------------+
+| Impar            | Par               | Par              |
++------------------+-------------------+------------------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 3 (CASE)
+world > /*
+   /*> Función que evalúa una calificación como 'Excelente', 'Bueno', 'Regular' o 'Insuficiente'.
+   /*> Calificación en [90, 100] es Excelente.
+   /*> Calificación en [70,90) es Bueno.
+   /*> Calificación en [50,70) es Regular.
+   /*> Calificación en [0,50) es Insuficiente.
+   /*> */
+world > DROP FUNCTION IF EXISTS evaluacion;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE FUNCTION IF NOT EXISTS evaluacion(cal INT UNSIGNED)
+    -> RETURNS VARCHAR(33)
+    -> DETERMINISTIC
+    -> RETURN CASE
+    ->     WHEN cal > 100 THEN 'Calificación ingresada incorrecta'
+    ->     WHEN cal >= 90 THEN 'Excelente'
+    ->     WHEN cal >= 70 THEN 'Bueno'
+    ->     WHEN cal >= 50 THEN 'Regular'
+    ->     ELSE 'Insuficiente'
+    ->     END;
+Query OK, 0 rows affected (0.00 sec)
+
+world > -- Obsérvese que no hubo necesidad de usar un cuerpo BEGIN...END al poder definir la función en una sola declaración RETURN.
+world > -- Tampoco hubo necesidad de cambiar el delimitador pues el único punto y coma utilizado sirvió para terminar la creación de la función.
+world > 
+world > -- Llamamos a la función `evaluacion`.
+world > SELECT '100' AS 'Calificación', evaluacion(100) AS 'Evaluación'
+    -> UNION 
+    -> SELECT '80', evaluacion(80)
+    -> UNION
+    -> SELECT '10', evaluacion(10)
+    -> UNION
+    -> SELECT '50', evaluacion(50);
++---------------+--------------+
+| Calificación  | Evaluación   |
++---------------+--------------+
+| 100           | Excelente    |
+| 80            | Bueno        |
+| 10            | Insuficiente |
+| 50            | Regular      |
++---------------+--------------+
+4 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 4 (WHILE)
+world > /*
+   /*> Función que calcula el factorial de un número no negativo.
+   /*> */
+world > DROP FUNCTION IF EXISTS factorial;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER ##
+world > 
+world > CREATE FUNCTION IF NOT EXISTS factorial(n INT UNSIGNED)
+    -> RETURNS INT
+    -> DETERMINISTIC
+    -> BEGIN
+    ->     DECLARE resultado INT UNSIGNED DEFAULT 1;   -- Si no se asigna un valor default MySQL inicializa la variable como NULL.
+    ->     DECLARE contador INT UNSIGNED DEFAULT 1;
+    -> 
+    ->     WHILE contador <= n DO
+    ->         SET resultado = resultado * contador;
+    ->         SET contador = contador + 1;
+    ->     END WHILE;
+    -> 
+    ->     RETURN resultado;
+    -> END ##
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > DELIMITER ;
+world > 
+world > -- Llamamos a la función `factorial`.
+world > SELECT factorial(5) AS 'El resultado de 5! es:';
++------------------------+
+| El resultado de 5! es: |
++------------------------+
+|                    120 |
++------------------------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 5 (LOOP & LEAVE)
+world > /*
+   /*> Función que suma los número de 1 a N.
+   /*> */
+world > DROP FUNCTION IF EXISTS suma;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER &&
+world > 
+world > CREATE FUNCTION IF NOT EXISTS suma(N INT UNSIGNED)
+    -> RETURNS INT
+    -> DETERMINISTIC
+    -> BEGIN
+    ->     DECLARE resultado INT UNSIGNED DEFAULT 0;
+    ->     DECLARE contador INT UNSIGNED DEFAULT 1;
+    -> 
+    ->     mi_loop: LOOP   -- Etiquetamos el LOOP como mi_loop para poder hacer referencia al bucle con LEAVE.
+    ->         SET resultado = resultado + contador;
+    ->         SET contador = contador + 1;
+    -> 
+    ->         IF contador > N THEN
+    ->             LEAVE mi_loop;   -- Con LEAVE terminamos el bucle que etiquetamos como mi_loop.
+    ->         END IF;
+    ->     END LOOP;
+    -> 
+    ->     RETURN resultado;
+    -> END &&
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > DELIMITER ;
+world > 
+world > -- Llamamos a la función `suma`.
+world > SELECT suma(5) AS 'La suma de 1+2+3+4+5 es:';
++--------------------------+
+| La suma de 1+2+3+4+5 es: |
++--------------------------+
+|                       15 |
++--------------------------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 6 (REPEAT)
+world > /*
+   /*> Función que hace una cuenta regresiva desde N hasta 1.
+   /*> */
+world > DROP FUNCTION IF EXISTS cuenta_regresiva;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER ??
+world > 
+world > CREATE FUNCTION cuenta_regresiva(N INT UNSIGNED)
+    -> RETURNS TEXT
+    -> DETERMINISTIC
+    -> BEGIN
+    ->     DECLARE resultado TEXT DEFAULT '';
+    ->     DECLARE contador INT UNSIGNED DEFAULT N;
+    -> 
+    ->     REPEAT
+    ->         SET resultado = CONCAT(resultado, contador, ' ');
+    ->         SET contador = contador - 1;
+    ->     UNTIL contador = 0
+    ->     END REPEAT;
+    -> 
+    ->     RETURN TRIM(resultado);
+    -> END ??
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > DELIMITER ;
+world > 
+world > -- Llamamos a la función `cuenta_regresiva`.
+world > SELECT cuenta_regresiva(100) AS 'Cuenta regresiva desde el número 100'\G
+*************************** 1. row ***************************
+Cuenta regresiva desde el número 100: 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
+1 row in set (0.00 sec)
+
+world > 
+world > /*
+   /*> Diferencia entre LOOP y REPEAT:
+   /*> >   LOOP
+   /*>     *   Ejecuta el bloque de instrucciones indefinidamente hasta que se cumpla una condición para salir del bucle. 
+   /*>     *   No tiene una condición de salida incorporada; es necesario usar IF y LEAVE para salir del bucle.
+   /*>     *   Es útil cuando deseas un control completo sobre cuándo y cómo salir del bucle, ya que la salida se puede colocar en cualquier parte dentro del bucle.
+   /*> >   REPEAT 
+   /*>     *   Ejecuta el bloque de instrucciones al menos una vez, y luego evalúa la condición de salida. 
+   /*>         Si la condición es FALSE, se repite el bloque; si es TRUE, se sale del bucle.
+   /*>     *   Es útil cuando se necesita ejecutar el bloque al menos una vez y evaluar la condición de salida después de cada iteración.
+   /*> */
+world > 
+world > -- Ejemplo 7 (Funciones aplicadas a tablas)
+world > /*
+   /*> Crearemos una función para convertir en millones la población de los países (tabla `country`).
+   /*> */
+world > DROP FUNCTION IF EXISTS PopulationInMillions;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE FUNCTION IF NOT EXISTS PopulationInMillions(pop INT)
+    -> RETURNS FLOAT
+    -> DETERMINISTIC
+    -> RETURN TRUNCATE(pop / 1000000, 0);
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Llamamos a la función `PopulationInMillions`.
+world > SELECT Name, PopulationInMillions(Population) FROM country ORDER BY 2 DESC LIMIT 10;
++--------------------+----------------------------------+
+| Name               | PopulationInMillions(Population) |
++--------------------+----------------------------------+
+| China              |                             1277 |
+| India              |                             1013 |
+| United States      |                              278 |
+| Indonesia          |                              212 |
+| Brazil             |                              170 |
+| Pakistan           |                              156 |
+| Russian Federation |                              146 |
+| Bangladesh         |                              129 |
+| Japan              |                              126 |
+| Nigeria            |                              111 |
++--------------------+----------------------------------+
+10 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 8 (Funciones con SELECT)
+world > /*
+   /*> Crearemos una función que toma el código de un país y devuelve sus idiomas oficiales junto con el procentaje de hablantes.
+   /*> */
+world > DROP FUNCTION IF EXISTS OfficialLanguages;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER !!
+world > 
+world > CREATE FUNCTION IF NOT EXISTS OfficialLanguages(Code CHAR(3)) 
+    -> RETURNS TINYTEXT
+    -> DETERMINISTIC
+    -> BEGIN
+    ->     DECLARE langs TINYTEXT;
+    -> 
+    ->     SELECT GROUP_CONCAT(CONCAT(Language, ' (', Percentage, '%', ')') ORDER BY Percentage DESC SEPARATOR ', ') INTO langs   
+    ->     -- Con INTO asignamos el resultado del SELECT a la variable que definimos como langs.
+    ->     -- IMPORTANTE: Solo se puede asignar con INTO un único valor a la variable definida. 
+    ->     FROM countrylanguage
+    ->     WHERE CountryCode = Code AND IsOfficial = 'T'
+    ->     GROUP BY CountryCode;
+    ->     -- Usar LIMIT 1 en el caso de obtener más de una fila como resultado del SELECT para reducir el número de filas a una sola y poder asignar un único valor a la variable.
+    -> 
+    ->     RETURN langs;
+    -> END !!
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > DELIMITER ;
+world > 
+world > -- Llamamos a la función `OfficialLanguages`.
+world > SELECT Name, IFNULL(OfficialLanguages(Code), 'No hay registro') AS 'OfficialLanguages' FROM country ORDER BY 1 LIMIT 10;
++---------------------+--------------------------------+
+| Name                | OfficialLanguages              |
++---------------------+--------------------------------+
+| Afghanistan         | Pashto (52.4%), Dari (32.1%)   |
+| Albania             | Albaniana (97.9%)              |
+| Algeria             | Arabic (86.0%)                 |
+| American Samoa      | Samoan (90.6%), English (3.1%) |
+| Andorra             | Catalan (32.3%)                |
+| Angola              | No hay registro                |
+| Anguilla            | English (0.0%)                 |
+| Antarctica          | No hay registro                |
+| Antigua and Barbuda | English (0.0%)                 |
+| Argentina           | Spanish (96.8%)                |
++---------------------+--------------------------------+
+10 rows in set (0.00 sec)
+
+world > -- Obsérvese que la función nos puede devolver nulos para algunos países.
+world > -- Lo anterior es debido a uno de los dos siguientes casos:
+world > -- 1) No hay registros del país en la tabla `countrylanguage`.
+world > -- 2) Sí hay registros del país en la tabla `countrylanguage`, pero ningún idioma registrado es oficial, es decir, IsOfficial = 'F'.
+world > 
+world > -- Ejemplo 9
+world > /*
+   /*> Mostraremos el nombre de la funciones creadas en la base de datos world.
+   /*> */
+world > SELECT SPECIFIC_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'world' AND ROUTINE_TYPE = 'FUNCTION';
++----------------------+
+| SPECIFIC_NAME        |
++----------------------+
+| cuadrado             |
+| cuenta_regresiva     |
+| esPar                |
+| evaluacion           |
+| factorial            |
+| OfficialLanguages    |
+| PopulationInMillions |
+| suma                 |
++----------------------+
+8 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 10
+world > /*
+   /*> Para ver el código de alguna función creada ejecutamos lo siguiente, cambiando el nombre de la función en cuestión en la cláusula WHERE.
+   /*> */
+world > SELECT ROUTINE_DEFINITION FROM information_schema.ROUTINES WHERE SPECIFIC_NAME = 'cuadrado';
++------------------------------------------------------------------------------------------------+
+| ROUTINE_DEFINITION                                                                             |
++------------------------------------------------------------------------------------------------+
+| BEGIN 
+    DECLARE resultado INT;
+    SET resultado = POWER(num, 2);
+    RETURN resultado;
+END |
++------------------------------------------------------------------------------------------------+
+1 row in set (0.00 sec)
+
+world > 
+world > /*
+   /*> Borramos de forma segura las funciones creadas.
+   /*> */
+world > DROP FUNCTION IF EXISTS cuadrado;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP FUNCTION IF EXISTS esPar;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP FUNCTION IF EXISTS evaluacion;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP FUNCTION IF EXISTS factorial;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP FUNCTION IF EXISTS suma;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP FUNCTION IF EXISTS cuenta_regresiva;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP FUNCTION IF EXISTS PopulationInMillions;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP FUNCTION IF EXISTS OfficialLanguages;
+Query OK, 0 rows affected (0.00 sec)
+
+world > notee
