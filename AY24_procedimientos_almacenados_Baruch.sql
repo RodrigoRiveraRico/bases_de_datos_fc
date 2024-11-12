@@ -310,3 +310,25 @@ SELECT ROUTINE_DEFINITION FROM information_schema.ROUTINES WHERE SPECIFIC_NAME =
 Mostraremos las funciones y procedimientos creados en la base de datos world.
 */
 SELECT SPECIFIC_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'world';
+
+/*
+Borramos de forma segura los procedimientos creados.
+*/
+DROP PROCEDURE IF EXISTS CountryPopulationDensity;
+DROP PROCEDURE IF EXISTS MaxPopulation;
+DROP PROCEDURE IF EXISTS CountryIndepYear;
+DROP PROCEDURE IF EXISTS CountryInfo;
+DROP PROCEDURE IF EXISTS AddCity;
+DROP PROCEDURE IF EXISTS UpdateOrDeleteCity;
+DROP PROCEDURE IF EXISTS worldSummary;
+
+/*
+Borramos de forma segura la vista creada.
+*/
+DROP VIEW IF EXISTS v_summary;
+
+/*
+Borramos los registros ingresados restantes de `city`.
+*/
+DELETE FROM city
+WHERE Name LIKE 'New City _' AND CountryCode = 'USA';
