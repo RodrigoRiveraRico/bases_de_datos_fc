@@ -18,11 +18,48 @@ IMPORTANTE: Si no se especifica el tipo de parámetro en el procedimiento, por d
     No returna un valor directamente (puede usar out)
 */
 
--- Ejemplo variables o.O
-
--- Ejemplo 1 (IN)
 /*
-Procedimiento que toma el código de un país como entrada y calcula su densidad poblacional.
+Variables definidas por el usuario
+>   Nos permite guardar un valor que podemos utilizar más adelante en alguna sentencia.
+    Esto permite pasar valores de una sentencia a otra.
+>   Una variable de usuario se escribe como @var_name, donde:
+    >   var_name, el nombre de la variable, consiste de caracteres alfanuméricos, ., _ y $.
+    >   Si queremos usar otros caracteres debemos escribir la variable como @'my-var' o @"my-var" o @`my-var`.
+>   La signación se hace con SET:
+    >   SET @var_name = expr [, @var_name = expr] ...
+>   Para consultar las variables creadas:
+    >   SELECT * FROM performance_schema.user_variables_by_thread;
+>   IMPORTANTE:
+    >   Los nombres de las variables de usuario no distinguen entre mayúsculas y minúsculas.
+    >   Si se hace referencia a una variable que no ha sido inicializada, esta tiene un valor de NULL y un tipo de cadena.
+    >   Todas las variables de una sesión de cliente determinada se liberan automáticamente cuando dicho cliente finaliza.
+*/
+
+-- Ejemplo 1 (VARIABLES DEFINIDAS POR EL USUSARIO)    
+/*
+Aplicaremos la función POW() a una variable para elevarla al cuadrado.
+*/
+-- Inicializamos la variable.
+SET @numero = 2;
+
+-- Vemos el valor que tiene.
+SELECT @numero;
+
+-- Elevamos al cuadrado.
+SET @numero = POW(@numero, 2);
+
+-- Verificamos que ahora la variable vale 4.
+SELECT @numero;
+
+-- Volvemos elevar al cuadrado.
+SET @numero = POW(@numero, 2);
+
+-- Verificamos que ahora la variable vale 16.
+SELECT @numero;
+
+-- Ejemplo 2 (IN)
+/*
+Procedimiento que toma el código de un país como entrada y muestra su densidad poblacional.
 */
 DROP PROCEDURE IF EXISTS CountryPopulationDensity;
 
@@ -37,7 +74,22 @@ CALL CountryPopulationDensity('MEX');
 -- > China (CHN)
 CALL CountryPopulationDensity('CHN');
 
--- Ejemplo 2 (OUT)
+-- Ejemplo 3 (OUT)
+/*
+Procedimiento que devuelve el máximo de la población de la tabla `country`.
+*/
+DROP PROCEDURE IF EXISTS MaxPopulation;
+
+CREATE PROCEDURE IF NOT EXISTS MaxPopulation(OUT max INT)
+    SELECT MAX(Population) INTO max
+    FROM country;
+
+-- Llamamos al procedimiento `MaxPopulation`.
+CALL MaxPopulation(@max_pob);
+-- Mostramos el valor devuelto por el procedimiento.
+SELECT @max_pob;
+
+-- Ejemplo 4 (IN & OUT)
 /*
 Procedimiento que toma el código de un país como entrada y devuelve su año de independencia.
 */
@@ -61,7 +113,7 @@ SELECT
     @independencia_usa AS 'Año de independencia de Estados Unidos',
     @independencia_pri AS 'Año de independencia de Puerto Rico';
 
--- Ejemplo 3 (INOUT)
+-- Ejemplo 5 (INOUT)
 /*
 Procedimiento que recibe el código de un país como entrada y devuelve el número de ciudades que este tiene.
 */
@@ -93,7 +145,7 @@ CALL CountryInfo(@info);
 -- Llamamos a la variable @info pues el procedimiento modifica a esta misma variable.
 SELECT @info;
 
--- Ejemplo 4
+-- Ejemplo 6
 /*
 Procedimiento que inserta un nuevo registro en la tabla `city`.
 */
@@ -112,11 +164,14 @@ CALL AddCity('New City 5', 'USA', 'New District', 5000000);
 -- Verificamos la inserción.
 SELECT * FROM city WHERE Name LIKE 'New City _';
 
--- Ejemplo 5
+-- Ejemplo 7
 /*
 PLANTEAMIENTO:
 >   Procedimiento que actualiza la población o elimina registros en la tabla `city`.
->   Se recibirán como parámetros un entero que será un porcentaje, una cadena que será el nombre de una ciudad y el código del país.
+>   Se recibirán como parámetros:
+    >   Un entero que será un porcentaje.
+    >   Una cadena que será el nombre de una ciudad.
+    >   El código del país.
 >   El procedimiento aumentará a la población en el porcentaje definido por el usuario.
     >   Si al aumentar la población se supera el umbral de 5000000 habitantes entonces se elimina el registro de la ciudad.
     >   En caso contrario, se hace la actualización de la población en la tabla.
@@ -131,29 +186,29 @@ CREATE PROCEDURE IF NOT EXISTS UpdateOrDeleteCity(IN porcentaje INT, IN CityName
 BEGIN
     DECLARE old_population INT;
     DECLARE new_population INT;
+    DECLARE id_city INT;
 
-    SELECT Population INTO old_population
+    SELECT Population, ID INTO old_population, id_city
     FROM city
     WHERE Name = CityName AND CountryCode = code;
 
     SET new_population = old_population * (1 + porcentaje / 100);
 
     IF new_population > 5000000 THEN
-        SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'con ID', CONCAT('"', ID, '"'), 'eliminada.') AS 'RESULTADO'
-        FROM city
-        WHERE Name = CityName AND CountryCode = code;
-        
         DELETE FROM city
         WHERE Name = CityName AND CountryCode = code;
-    
-    ELSE      
-        SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'con ID', CONCAT('"', ID, '"'), 'actualizada.') AS 'RESULTADO'
-        FROM city
-        WHERE Name = CityName AND CountryCode = code;
 
+        SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'con ID', CONCAT('"', id_city, '"'), 'eliminada.') AS 'RESULTADO';
+
+    ELSEIF new_population <= 5000000 THEN      
         UPDATE city 
         SET Population = new_population
         WHERE Name = CityName AND CountryCode = code;
+
+        SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'con ID', CONCAT('"', id_city, '"'), 'actualizada.') AS 'RESULTADO';
+
+    ELSEIF id_city IS NULL THEN
+        SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'no encontrada.') AS 'RESULTADO';
     END IF;
 END //
 
@@ -167,7 +222,7 @@ CALL UpdateOrDeleteCity(10, 'New City 3', 'USA');
 CALL UpdateOrDeleteCity(10, 'New City 4', 'USA');
 CALL UpdateOrDeleteCity(10, 'New City 5', 'USA');
 
--- Ejemplo 6
+-- Ejemplo 8
 /*
 PLANTEAMIENTO:
 >   En `country` tenemos el catálogo de países.
@@ -200,7 +255,7 @@ SELECT
 FROM 
     country
 LEFT JOIN 
-    city ON country.Code = city.CountryCode
+    city ON Code = CountryCode
 UNION 
 SELECT 
     'countrylanguage',
@@ -209,7 +264,7 @@ SELECT
 FROM 
     country
 LEFT JOIN 
-    countrylanguage ON country.Code = countrylanguage.CountryCode;
+    countrylanguage ON Code = CountryCode;
 
 -- PROCEDIMIENTO
 DROP PROCEDURE IF EXISTS worldSummary;
@@ -237,3 +292,21 @@ CALL worldSummary('city');
 CALL worldSummary('countrylanguage');
 CALL worldSummary('*');
 CALL worldSummary('UwU');
+
+-- Ejemplo 9
+/*
+Mostraremos el nombre de los procedimientos creados en la base de datos world.
+*/
+SELECT SPECIFIC_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'world' AND ROUTINE_TYPE = 'PROCEDURE';
+
+-- Ejemplo 10
+/*
+Para ver el código de algún procedimiento creado ejecutamos lo siguiente, cambiando el nombre del procedimeinto en cuestión en la cláusula WHERE.
+*/
+SELECT ROUTINE_DEFINITION FROM information_schema.ROUTINES WHERE SPECIFIC_NAME = 'UpdateOrDeleteCity'\G
+
+-- Ejemplo 11
+/*
+Mostraremos las funciones y procedimientos creados en la base de datos world.
+*/
+SELECT SPECIFIC_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'world';
