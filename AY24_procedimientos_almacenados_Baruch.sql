@@ -11,11 +11,24 @@ Rodrigo Baruch Rivera Rico
 -- \u world
 
 /*
-Procedimientos almacenados
-
-IMPORTANTE: Si no se especifica el tipo de parámetro en el procedimiento, por default se asigna IN.
-    Un procedimiento que no recibe parámetros se debe definir con una lista vacía de parámetros: ()
-    No returna un valor directamente (puede usar out)
+Procedimiento almacenado
+>   Es un conjunto de sentencias SQL almacenadas dentro del Servidor MySQL.
+>   Permite encapsular una secuencia de operaciones lógicas que pueden ser reutilizadas.
+>   Permite realizar tareas complejas como manipulación de datos, cálculos o verificaciones en una sola llamada.
+>   A diferencia de las funciones, no retorna un valor directamente.
+>   Parámetros:
+    >   IN: El valor del parámetro se pasa al procedimiento cuando es invocado.
+        El procedimiento puede modificar este valor, pero la modificación no es visible al terminar la ejecución del procedimiento.
+    >   OUT: El procedimiento asigna un valor a este parámetro.
+        El valor de este parámetro es devuelto por el procedimiento al finalizar su ejecución permitiendo que funcione como una "salida".
+    >   INOUT: El valor del parámetro es de entrada en la invocación del procedimiento;
+        puede ser modificado dentro de este y asignársele un valor de salida.
+>   Ejecución, donde sp_name es el nombre del procecimiento:
+    >   CALL sp_name([parameter[,...]])
+    >   CALL sp_name[()]
+>   IMPORTANTE: 
+    >   Si no se especifica el tipo de parámetro en el procedimiento, por default se asigna IN.
+    >   Un procedimiento que no recibe parámetros se debe definir con una lista vacía de parámetros: ()
 */
 
 /*
