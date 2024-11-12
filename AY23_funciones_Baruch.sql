@@ -43,7 +43,7 @@ RETURNS INT
 DETERMINISTIC
 BEGIN 
     DECLARE resultado INT;
-    SET resultado = POWER(num, 2);
+    SET resultado = num * num;
     RETURN resultado;
 END //
 
