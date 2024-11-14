@@ -64,6 +64,7 @@ VALUES (NEW.ID, NEW.Name, NEW.CountryCode, NEW.District, NEW.Population, 'INSERT
 >   De la documentación de MySQL:
     *   In a BEFORE trigger, the NEW value for an AUTO_INCREMENT column is 0, 
     *   not the sequence number that is generated automatically when the new row actually is inserted.
+    *   https://dev.mysql.com/doc/refman/9.0/en/trigger-syntax.html
 */
 
 -- Insertamos nuevos datos en `city`.
@@ -79,4 +80,50 @@ VALUES
 SELECT * FROM city WHERE Name LIKE 'new city _';
 
 -- Veamos que el trigger efectivamente registró las nuevas inserciones.
+SELECT * FROM city_log;
+
+-- Ejemplo 3 (BEFORE UPDATE)
+/*
+Trigger que evita que en la actualización de la población en la tabla `city` se superen los 10 millones de habitantes.
+*/
+DROP TRIGGER IF EXISTS city_BU_trigger;
+
+DELIMITER //
+
+CREATE TRIGGER IF NOT EXISTS city_BU_trigger
+BEFORE UPDATE ON city
+FOR EACH ROW
+BEGIN
+    IF NEW.Population > 10000000 THEN
+        SET NEW.Population = 10000000;
+    END IF;
+END //
+
+DELIMITER ;
+
+-- Ejemplo 4 (AFTER UPDATE)
+/*
+Trigger que registra en `city_log` cada row que ha sido actualizado en `city`.
+*/
+DROP TRIGGER IF EXISTS city_AU_trigger;
+
+CREATE TRIGGER IF NOT EXISTS city_AU_trigger
+AFTER UPDATE ON city
+FOR EACH ROW
+INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'UPDATE', NOW(), USER());
+
+-- Actualizamos datos en `city`.
+UPDATE city
+SET Population = CASE
+    WHEN Name = 'New City 1' AND CountryCode = 'USA' THEN 20000000
+    WHEN Name = 'New City 2' AND CountryCode = 'USA' THEN 30000000
+    WHEN Name = 'New City 3' AND CountryCode = 'USA' THEN 10000
+    ELSE Population -- No olvidar este ELSE para que en el UPDATE no se asigne NULL en la población de los rows que no están considerados en el operador CASE.
+END;
+    
+-- Verificamos que efectivamente la población tanto de 'New City 1' como de 'New City 2' no supera los 10 millones de habitantes.
+SELECT * FROM city WHERE Name LIKE 'new city _';
+
+-- Veamos que el trigger efectivamente registró el estado anterior a la actualización de los rows modificados.
 SELECT * FROM city_log;
