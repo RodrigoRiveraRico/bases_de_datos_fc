@@ -1,0 +1,655 @@
+world > /*
+   /*> =================================
+   /*> Ayudantía 24: Procedimientos almacenados
+   /*> Rodrigo Baruch Rivera Rico
+   /*> 14 noviembre 2024
+   /*> =================================
+   /*> */
+world > 
+world > -- Antes de empezar: cargar la base world y ponerla en uso
+world > -- \. path\to\script\base_world.sql
+world > -- \u world
+world > 
+world > /*
+   /*> Procedimiento almacenado
+   /*> >   Es un conjunto de sentencias SQL almacenadas dentro del Servidor MySQL.
+   /*> >   Permite encapsular una secuencia de operaciones lógicas que pueden ser reutilizadas.
+   /*> >   Permite realizar tareas complejas como manipulación de datos, cálculos o verificaciones en una sola llamada.
+   /*> >   A diferencia de las funciones, no retorna un valor directamente.
+   /*> >   Parámetros:
+   /*>     >   IN: El valor del parámetro se pasa al procedimiento cuando es invocado.
+   /*>         El procedimiento puede modificar este valor, pero la modificación no es visible al terminar la ejecución del procedimiento.
+   /*>     >   OUT: El procedimiento asigna un valor a este parámetro.
+   /*>         El valor de este parámetro es devuelto por el procedimiento al finalizar su ejecución permitiendo que funcione como una "salida".
+   /*>     >   INOUT: El valor del parámetro es de entrada en la invocación del procedimiento;
+   /*>         puede ser modificado dentro de este y asignársele un valor de salida.
+   /*> >   Ejecución, donde sp_name es el nombre del procecimiento:
+   /*>     >   CALL sp_name([parameter[,...]])
+   /*>     >   CALL sp_name[()]
+   /*> >   IMPORTANTE: 
+   /*>     >   Si no se especifica el tipo de parámetro en el procedimiento, por default se asigna IN.
+   /*>     >   Un procedimiento que no recibe parámetros se debe definir con una lista vacía de parámetros: ()
+   /*> */
+world > 
+world > /*
+   /*> Variables definidas por el usuario
+   /*> >   Nos permite guardar un valor que podemos utilizar más adelante en alguna sentencia.
+   /*>     Esto permite pasar valores de una sentencia a otra.
+   /*> >   Una variable de usuario se escribe como @var_name, donde:
+   /*>     >   var_name, el nombre de la variable, consiste de caracteres alfanuméricos, ., _ y $.
+   /*>     >   Si queremos usar otros caracteres debemos escribir la variable como @'my-var' o @"my-var" o @`my-var`.
+   /*> >   La signación se hace con SET:
+   /*>     >   SET @var_name = expr [, @var_name = expr] ...
+   /*> >   Para consultar las variables creadas:
+   /*>     >   SELECT * FROM performance_schema.user_variables_by_thread;
+   /*> >   IMPORTANTE:
+   /*>     >   Los nombres de las variables de usuario no distinguen entre mayúsculas y minúsculas.
+   /*>     >   Si se hace referencia a una variable que no ha sido inicializada, esta tiene un valor de NULL y un tipo de cadena.
+   /*>     >   Todas las variables de una sesión de cliente determinada se liberan automáticamente cuando dicho cliente finaliza.
+   /*> */
+world > 
+world > -- Ejemplo 1 (VARIABLES DEFINIDAS POR EL USUSARIO)    
+world > /*
+   /*> Aplicaremos la función POW() a una variable para elevarla al cuadrado.
+   /*> */
+world > -- Inicializamos la variable.
+world > SET @numero = 2;
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Vemos el valor que tiene.
+world > SELECT @numero;
++---------+
+| @numero |
++---------+
+|       2 |
++---------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Elevamos al cuadrado.
+world > SET @numero = POW(@numero, 2);
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Verificamos que ahora la variable vale 4.
+world > SELECT @numero;
++---------+
+| @numero |
++---------+
+|       4 |
++---------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Volvemos elevar al cuadrado.
+world > SET @numero = POW(@numero, 2);
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Verificamos que ahora la variable vale 16.
+world > SELECT @numero;
++---------+
+| @numero |
++---------+
+|      16 |
++---------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 2 (IN)
+world > /*
+   /*> Procedimiento que toma el código de un país como entrada y muestra su densidad poblacional.
+   /*> */
+world > DROP PROCEDURE IF EXISTS CountryPopulationDensity;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE PROCEDURE IF NOT EXISTS CountryPopulationDensity(IN countryCode CHAR(3))
+    ->     SELECT Name, Population / SurfaceArea AS PopulationDensity
+    ->     FROM country
+    ->     WHERE Code = countryCode;
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Llamamos al procedimiento `CountryPopulationDensity` para:
+world > -- > México (MEX)
+world > CALL CountryPopulationDensity('MEX');
++--------+-------------------+
+| Name   | PopulationDensity |
++--------+-------------------+
+| Mexico |           50.4958 |
++--------+-------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+world > -- > China (CHN)
+world > CALL CountryPopulationDensity('CHN');
++-------+-------------------+
+| Name  | PopulationDensity |
++-------+-------------------+
+| China |          133.4557 |
++-------+-------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Ejemplo 3 (OUT)
+world > /*
+   /*> Procedimiento que devuelve el máximo de la población de la tabla `country`.
+   /*> */
+world > DROP PROCEDURE IF EXISTS MaxPopulation;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE PROCEDURE IF NOT EXISTS MaxPopulation(OUT max INT)
+    ->     SELECT MAX(Population) INTO max
+    ->     FROM country;
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Llamamos al procedimiento `MaxPopulation`.
+world > CALL MaxPopulation(@max_pob);
+Query OK, 1 row affected (0.00 sec)
+
+world > -- Mostramos el valor devuelto por el procedimiento.
+world > SELECT @max_pob;
++------------+
+| @max_pob   |
++------------+
+| 1277558000 |
++------------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 4 (IN & OUT)
+world > /*
+   /*> Procedimiento que toma el código de un país como entrada y devuelve su año de independencia.
+   /*> */
+world > DROP PROCEDURE IF EXISTS CountryIndepYear;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE PROCEDURE IF NOT EXISTS CountryIndepYear(IN countryCode CHAR(3), OUT indep VARCHAR(15))
+    ->     SELECT IFNULL(IndepYear, 'No hay registro') INTO indep
+    ->     FROM country
+    ->     WHERE Code = countryCode;
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Llamamos al procedimineto `CountryIndepYear` para:
+world > -- > México (MEX)
+world > -- > Estados Unidos (USA)
+world > -- > Puerto Rico (PRI)
+world > CALL CountryIndepYear('MEX', @independencia_mex);
+Query OK, 1 row affected (0.00 sec)
+
+world > CALL CountryIndepYear('USA', @independencia_usa);
+Query OK, 1 row affected (0.00 sec)
+
+world > CALL CountryIndepYear('PRI', @independencia_pri);
+Query OK, 1 row affected (0.00 sec)
+
+world > -- Mostramos los valores devueltos por el procedimmiento.
+world > SELECT 
+    ->     @independencia_mex AS 'Año de independencia de Mexico',
+    ->     @independencia_usa AS 'Año de independencia de Estados Unidos',
+    ->     @independencia_pri AS 'Año de independencia de Puerto Rico';
++---------------------------------+-----------------------------------------+--------------------------------------+
+| Año de independencia de Mexico  | Año de independencia de Estados Unidos  | Año de independencia de Puerto Rico  |
++---------------------------------+-----------------------------------------+--------------------------------------+
+| 1810                            | 1776                                    | No hay registro                      |
++---------------------------------+-----------------------------------------+--------------------------------------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 5 (INOUT)
+world > /*
+   /*> Procedimiento que recibe el código de un país como entrada y devuelve el número de ciudades que este tiene.
+   /*> */
+world > DROP PROCEDURE IF EXISTS CountryInfo;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > -- Cambiamos el delimitador para que el bloque de código dentro del cuerpo BEGIN...END no se ejecute al finalizar con punto y coma cada declaración.
+world > DELIMITER //
+world > 
+world > CREATE PROCEDURE IF NOT EXISTS CountryInfo(INOUT countryCodeInfo TINYTEXT)
+    -> -- A pesar de que la entrada del procedimiento será un CHAR(3), 
+    -> -- definimos al parámetro `countryCodeInfo` como TINYTEXT pues la salida del procedimiento será una cadena mayor a CHAR(3).
+    -> BEGIN
+    ->     DECLARE conteo INT UNSIGNED;
+    ->     
+    ->     SELECT COUNT(*) INTO conteo
+    ->     FROM city
+    ->     WHERE CountryCode = countryCodeInfo;
+    -> 
+    ->     SET countryCodeInfo = CONCAT_WS(' ', countryCodeInfo, 'tiene', conteo, 'ciudades.');
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+world >     
+world > -- Regresamos al delimitador de punto y coma para ejecutar consultas de forma ordinaria.    
+world > DELIMITER ;
+world > 
+world > -- Llamamos al procedimiento `countryInfo` para México (MEX).
+world > -- IMPORTANTE: Notemos que para este caso hay que inicializar la variable antes de llamar al procedimiento.
+world > SET @info = 'MEX';
+Query OK, 0 rows affected (0.00 sec)
+
+world > CALL CountryInfo(@info);
+Query OK, 1 row affected (0.00 sec)
+
+world > -- Llamamos a la variable @info pues el procedimiento modifica a esta misma variable.
+world > SELECT @info;
++-------------------------+
+| @info                   |
++-------------------------+
+| MEX tiene 173 ciudades. |
++-------------------------+
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 6
+world > /*
+   /*> Procedimiento que inserta un nuevo registro en la tabla `city`.
+   /*> */
+world > DROP PROCEDURE IF EXISTS AddCity;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE PROCEDURE IF NOT EXISTS AddCity(IN cityName VARCHAR(50), IN countryCode CHAR(3), IN district VARCHAR(50), IN population INT)
+    ->     INSERT INTO city (Name, CountryCode, District, Population)
+    ->     VALUES (cityName, countryCode, district, population);
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Llamamos al procedimiento `AddCity`.
+world > CALL AddCity('New City 1', 'USA', 'New District', 1000000);
+Query OK, 1 row affected (0.00 sec)
+
+world > CALL AddCity('New City 2', 'USA', 'New District', 2000000);
+Query OK, 1 row affected (0.00 sec)
+
+world > CALL AddCity('New City 3', 'USA', 'New District', 3000000);
+Query OK, 1 row affected (0.00 sec)
+
+world > CALL AddCity('New City 4', 'USA', 'New District', 4000000);
+Query OK, 1 row affected (0.00 sec)
+
+world > CALL AddCity('New City 5', 'USA', 'New District', 5000000);
+Query OK, 1 row affected (0.00 sec)
+
+world > -- Verificamos la inserción.
+world > SELECT * FROM city WHERE Name LIKE 'New City _';
++------+------------+-------------+--------------+------------+
+| ID   | Name       | CountryCode | District     | Population |
++------+------------+-------------+--------------+------------+
+| 4110 | New City 1 | USA         | New District |    1000000 |
+| 4111 | New City 2 | USA         | New District |    2000000 |
+| 4112 | New City 3 | USA         | New District |    3000000 |
+| 4113 | New City 4 | USA         | New District |    4000000 |
+| 4114 | New City 5 | USA         | New District |    5000000 |
++------+------------+-------------+--------------+------------+
+5 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 7
+world > /*
+   /*> PLANTEAMIENTO:
+   /*> >   Procedimiento que actualiza la población o elimina registros en la tabla `city`.
+   /*> >   Se recibirán como parámetros:
+   /*>     1.   Un entero que será un porcentaje.
+   /*>     2.   Una cadena que será el nombre de una ciudad.
+   /*>     3.   El código del país.
+   /*> >   El procedimiento aumentará a la población en el porcentaje definido por el usuario.
+   /*>     >   Si al aumentar la población se supera el umbral de 5000000 habitantes entonces se elimina el registro de la ciudad.
+   /*>     >   En caso contrario, se hace la actualización de la población en la tabla.
+   /*>     >   En función del caso en que estemos, se mostrará un query indicando si la ciudad en cuestión fue eliminada o actualizada.
+   /*> >   Para el ejemplo nos centraremos en llamar al procedimiento con los registros recién agregados.
+   /*> */
+world > DROP PROCEDURE IF EXISTS UpdateOrDeleteCity;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER //
+world > 
+world > CREATE PROCEDURE IF NOT EXISTS UpdateOrDeleteCity(IN porcentaje INT, IN CityName VARCHAR(50), IN code CHAR(3))
+    -> BEGIN
+    ->     DECLARE old_population INT;
+    ->     DECLARE new_population INT;
+    ->     DECLARE id_city INT;
+    -> 
+    ->     SELECT Population, ID INTO old_population, id_city
+    ->     FROM city
+    ->     WHERE Name = CityName AND CountryCode = code;
+    -> 
+    ->     SET new_population = old_population * (1 + porcentaje / 100);
+    -> 
+    ->     IF new_population > 5000000 THEN
+    ->         DELETE FROM city
+    ->         WHERE Name = CityName AND CountryCode = code;
+    -> 
+    ->         SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'con ID', CONCAT('"', id_city, '"'), 'eliminada.') AS 'RESULTADO';
+    -> 
+    ->     ELSEIF new_population <= 5000000 THEN      
+    ->         UPDATE city 
+    ->         SET Population = new_population
+    ->         WHERE Name = CityName AND CountryCode = code;
+    -> 
+    ->         SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'con ID', CONCAT('"', id_city, '"'), 'actualizada.') AS 'RESULTADO';
+    -> 
+    ->     ELSEIF id_city IS NULL THEN
+    ->         SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'no encontrada.') AS 'RESULTADO';
+    ->     END IF;
+    -> END //
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > DELIMITER ;
+world > 
+world > -- Llamamos al procedimiento `UpdateOrDeleteCity`.
+world > -- Aplicamos un 10%
+world > CALL UpdateOrDeleteCity(10, 'New City 1', 'USA');
++------------------------------------------------+
+| RESULTADO                                      |
++------------------------------------------------+
+| Ciudad "New City 1" con ID "4110" actualizada. |
++------------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.01 sec)
+
+world > CALL UpdateOrDeleteCity(10, 'New City 2', 'USA');
++------------------------------------------------+
+| RESULTADO                                      |
++------------------------------------------------+
+| Ciudad "New City 2" con ID "4111" actualizada. |
++------------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+world > CALL UpdateOrDeleteCity(10, 'New City 3', 'USA');
++------------------------------------------------+
+| RESULTADO                                      |
++------------------------------------------------+
+| Ciudad "New City 3" con ID "4112" actualizada. |
++------------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.01 sec)
+
+world > CALL UpdateOrDeleteCity(10, 'New City 4', 'USA');
++------------------------------------------------+
+| RESULTADO                                      |
++------------------------------------------------+
+| Ciudad "New City 4" con ID "4113" actualizada. |
++------------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.01 sec)
+
+world > CALL UpdateOrDeleteCity(10, 'New City 5', 'USA');
++----------------------------------------------+
+| RESULTADO                                    |
++----------------------------------------------+
+| Ciudad "New City 5" con ID "4114" eliminada. |
++----------------------------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Ejemplo 8
+world > /*
+   /*> PLANTEAMIENTO:
+   /*> >   En `country` tenemos el catálogo de países.
+   /*> >   Las tablas `city` y `countrylanguage` tienen registros de ciudades e idiomas respectivamente, y a su vez hacen referencia a `country`.
+   /*> >   Nos interesa tener un resumen de la base de datos que muestre el total de países registrados en cada una de las tablas:
+   /*>     >   En `country`, al ser un catálogo, se encuentra el total de países registrados en nuestra base de datos.
+   /*>     >   Tanto en `city` como en `countrylanguage` pueden faltar registros de países.
+   /*> >   Primero se creará una vista con el resumen descrito arriba, es decir,
+   /*>     mostrando el total de países que contiene cada tabla y el total sin asignación.
+   /*>     Como la tabla `country` es un catálogo, se le indicará como tal en la columna designada para el total sin asignación.
+   /*> >   Luego se usará esta vista en un procedimiento que reciba
+   /*>     el nombre de la tabla de interés y se ejecute un query que muestre el resumen de la tabla en cuestión.
+   /*> >   Además, si el parámetro de entrada es '*' se mostrará la vista completa.
+   /*>     Si se ingresa un nombre incorrecto, se mostrará un query indicándolo.
+   /*> */
+world > -- VISTA
+world > DROP VIEW IF EXISTS v_summary;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE OR REPLACE VIEW v_summary AS
+    -> SELECT 
+    ->     'country' AS 'Tabla',
+    ->     COUNT(*) AS 'Total países',
+    ->     'Es catálogo' AS 'Sin asginación'
+    -> FROM 
+    ->     country
+    -> UNION
+    -> SELECT 
+    ->     'city',
+    ->     COUNT(DISTINCT CountryCode), 
+    ->     SUM(CASE WHEN CountryCode IS NULL THEN 1 ELSE 0 END)
+    -> FROM 
+    ->     country
+    -> LEFT JOIN 
+    ->     city ON Code = CountryCode
+    -> UNION 
+    -> SELECT 
+    ->     'countrylanguage',
+    ->     COUNT(DISTINCT CountryCode), 
+    ->     SUM(CASE WHEN CountryCode IS NULL THEN 1 ELSE 0 END)
+    -> FROM 
+    ->     country
+    -> LEFT JOIN 
+    ->     countrylanguage ON Code = CountryCode;
+Query OK, 0 rows affected (0.01 sec)
+
+world > 
+world > -- PROCEDIMIENTO
+world > DROP PROCEDURE IF EXISTS worldSummary;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER //
+world > 
+world > CREATE PROCEDURE IF NOT EXISTS worldSummary(IN tbl_name VARCHAR(15))
+    -> BEGIN
+    ->     IF tbl_name = '*' THEN
+    ->         SELECT * FROM v_summary;
+    -> 
+    ->     ELSEIF tbl_name IN ('country', 'city', 'countrylanguage') THEN
+    ->         SELECT * FROM v_summary WHERE Tabla = tbl_name;
+    -> 
+    ->     ELSE
+    ->         SELECT CONCAT_WS(' ', 'Tabla', CONCAT('"', tbl_name, '"'), 'no existe.') AS 'ERROR';
+    ->     END IF;
+    -> END //
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > DELIMITER ;
+world > 
+world > -- Llamamos al procedimiento `worldSummary`.
+world > CALL worldSummary('country');
++---------+---------------+-----------------+
+| Tabla   | Total países  | Sin asginación  |
++---------+---------------+-----------------+
+| country |           239 | Es catálogo     |
++---------+---------------+-----------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+world > CALL worldSummary('city');
++-------+---------------+-----------------+
+| Tabla | Total países  | Sin asginación  |
++-------+---------------+-----------------+
+| city  |           232 | 7               |
++-------+---------------+-----------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+world > CALL worldSummary('countrylanguage');
++-----------------+---------------+-----------------+
+| Tabla           | Total países  | Sin asginación  |
++-----------------+---------------+-----------------+
+| countrylanguage |           233 | 6               |
++-----------------+---------------+-----------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+world > CALL worldSummary('*');
++-----------------+---------------+-----------------+
+| Tabla           | Total países  | Sin asginación  |
++-----------------+---------------+-----------------+
+| country         |           239 | Es catálogo     |
+| city            |           232 | 7               |
+| countrylanguage |           233 | 6               |
++-----------------+---------------+-----------------+
+3 rows in set (0.01 sec)
+
+Query OK, 0 rows affected (0.01 sec)
+
+world > CALL worldSummary('UwU');
++------------------------+
+| ERROR                  |
++------------------------+
+| Tabla "UwU" no existe. |
++------------------------+
+1 row in set (0.00 sec)
+
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Ejemplo 9
+world > /*
+   /*> Mostraremos el nombre de los procedimientos creados en la base de datos world.
+   /*> */
+world > SELECT SPECIFIC_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'world' AND ROUTINE_TYPE = 'PROCEDURE';
++--------------------------+
+| SPECIFIC_NAME            |
++--------------------------+
+| AddCity                  |
+| CountryIndepYear         |
+| CountryInfo              |
+| CountryPopulationDensity |
+| MaxPopulation            |
+| UpdateOrDeleteCity       |
+| worldSummary             |
++--------------------------+
+7 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 10
+world > /*
+   /*> Para ver el código de algún procedimiento creado ejecutamos lo siguiente, cambiando el nombre del procedimeinto en cuestión en la cláusula WHERE.
+   /*> */
+world > SELECT ROUTINE_DEFINITION FROM information_schema.ROUTINES WHERE SPECIFIC_NAME = 'UpdateOrDeleteCity'\G
+*************************** 1. row ***************************
+ROUTINE_DEFINITION: BEGIN
+    DECLARE old_population INT;
+    DECLARE new_population INT;
+    DECLARE id_city INT;
+
+    SELECT Population, ID INTO old_population, id_city
+    FROM city
+    WHERE Name = CityName AND CountryCode = code;
+
+    SET new_population = old_population * (1 + porcentaje / 100);
+
+    IF new_population > 5000000 THEN
+        DELETE FROM city
+        WHERE Name = CityName AND CountryCode = code;
+
+        SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'con ID', CONCAT('"', id_city, '"'), 'eliminada.') AS 'RESULTADO';
+
+    ELSEIF new_population <= 5000000 THEN      
+        UPDATE city 
+        SET Population = new_population
+        WHERE Name = CityName AND CountryCode = code;
+
+        SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'con ID', CONCAT('"', id_city, '"'), 'actualizada.') AS 'RESULTADO';
+
+    ELSEIF id_city IS NULL THEN
+        SELECT CONCAT_WS(' ', 'Ciudad', CONCAT('"', CityName, '"'), 'no encontrada.') AS 'RESULTADO';
+    END IF;
+END
+1 row in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 11
+world > /*
+   /*> Mostraremos las funciones y procedimientos creados en la base de datos world.
+   /*> */
+world > SELECT SPECIFIC_NAME, ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'world';
++--------------------------+--------------+
+| SPECIFIC_NAME            | ROUTINE_TYPE |
++--------------------------+--------------+
+| cuadrado                 | FUNCTION     |
+| cuenta_regresiva         | FUNCTION     |
+| espar                    | FUNCTION     |
+| evaluacion               | FUNCTION     |
+| factorial                | FUNCTION     |
+| officiallanguages        | FUNCTION     |
+| populationinmillions     | FUNCTION     |
+| suma                     | FUNCTION     |
+| AddCity                  | PROCEDURE    |
+| CountryIndepYear         | PROCEDURE    |
+| CountryInfo              | PROCEDURE    |
+| CountryPopulationDensity | PROCEDURE    |
+| MaxPopulation            | PROCEDURE    |
+| UpdateOrDeleteCity       | PROCEDURE    |
+| worldSummary             | PROCEDURE    |
++--------------------------+--------------+
+15 rows in set (0.00 sec)
+
+world > 
+world > /*
+   /*> Borramos de forma segura los procedimientos creados.
+   /*> */
+world > DROP PROCEDURE IF EXISTS CountryPopulationDensity;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP PROCEDURE IF EXISTS MaxPopulation;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP PROCEDURE IF EXISTS CountryIndepYear;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP PROCEDURE IF EXISTS CountryInfo;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP PROCEDURE IF EXISTS AddCity;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP PROCEDURE IF EXISTS UpdateOrDeleteCity;
+Query OK, 0 rows affected (0.00 sec)
+
+world > DROP PROCEDURE IF EXISTS worldSummary;
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > /*
+   /*> Borramos de forma segura la vista creada.
+   /*> */
+world > DROP VIEW IF EXISTS v_summary;
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > /*
+   /*> Borramos los registros ingresados restantes de `city`.
+   /*> */
+world > DELETE FROM city
+    -> WHERE Name LIKE 'New City _' AND CountryCode = 'USA';
+Query OK, 4 rows affected (0.00 sec)
+
+world > notee
