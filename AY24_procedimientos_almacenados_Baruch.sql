@@ -182,14 +182,14 @@ SELECT * FROM city WHERE Name LIKE 'New City _';
 PLANTEAMIENTO:
 >   Procedimiento que actualiza la población o elimina registros en la tabla `city`.
 >   Se recibirán como parámetros:
-    >   Un entero que será un porcentaje.
-    >   Una cadena que será el nombre de una ciudad.
-    >   El código del país.
+    1.   Un entero que será un porcentaje.
+    2.   Una cadena que será el nombre de una ciudad.
+    3.   El código del país.
 >   El procedimiento aumentará a la población en el porcentaje definido por el usuario.
     >   Si al aumentar la población se supera el umbral de 5000000 habitantes entonces se elimina el registro de la ciudad.
     >   En caso contrario, se hace la actualización de la población en la tabla.
     >   En función del caso en que estemos, se mostrará un query indicando si la ciudad en cuestión fue eliminada o actualizada.
->   Para el ejemplo nos centraremos en modificar los registros recién agregados al llamar al procedimiento.
+>   Para el ejemplo nos centraremos en llamar al procedimiento con los registros recién agregados.
 */
 DROP PROCEDURE IF EXISTS UpdateOrDeleteCity;
 
