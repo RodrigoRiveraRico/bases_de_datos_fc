@@ -245,6 +245,7 @@ PLANTEAMIENTO:
     >   Tanto en `city` como en `countrylanguage` pueden faltar registros de países.
 >   Primero se creará una vista con el resumen descrito arriba, es decir,
     mostrando el total de países que contiene cada tabla y el total sin asignación.
+    Como la tabla `country` es un catálogo, se le indicará como tal en la columna designada para el total sin asignación.
 >   Luego se usará esta vista en un procedimiento que reciba
     el nombre de la tabla de interés y se ejecute un query que muestre el resumen de la tabla en cuestión.
 >   Además, si el parámetro de entrada es '*' se mostrará la vista completa.
@@ -257,7 +258,7 @@ CREATE OR REPLACE VIEW v_summary AS
 SELECT 
     'country' AS 'Tabla',
     COUNT(*) AS 'Total países',
-    '-' AS 'Sin asginación'
+    'Es catálogo' AS 'Sin asginación'
 FROM 
     country
 UNION
