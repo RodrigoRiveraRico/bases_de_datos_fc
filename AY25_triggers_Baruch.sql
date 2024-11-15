@@ -69,11 +69,11 @@ VALUES (NEW.ID, NEW.Name, NEW.CountryCode, NEW.District, NEW.Population, 'INSERT
 -- Insertamos nuevos datos en `city`.
 INSERT INTO city (Name, CountryCode, District, Population)
 VALUES 
-('New City 1', 'USA', 'New District', 1000000),
-('New City 2', 'USA', 'New District', 2000000),
-('New City 3', 'USA', 'New District', 3000000),
-('New City 4', 'USA', 'New District', 4000000),
-('New City 5', 'USA', 'New District', 5000000);
+('new city 1', 'USA', 'New District', 1000000),
+('new city 2', 'USA', 'New District', 2000000),
+('new city 3', 'USA', 'New District', 3000000),
+('new city 4', 'USA', 'New District', 4000000),
+('new city 5', 'USA', 'New District', 5000000);
 
 -- Veamos que el trigger `city_BI_trigger` efectivamente convirtió en mayúsculas el nombre de la ciudad de las nuevas inserciones.
 SELECT * FROM city WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
@@ -161,7 +161,9 @@ estas quedarán registradas (con el estado anterior a la modificación) en `city
 /*
 Trigger que registra en `city_log` cada row que ha sido eliminado en `city`.
 */
-CREATE TRIGGER city_AD_trigger
+DROP TRIGGER IF EXISTS city_AD_trigger;
+
+CREATE TRIGGER IF NOT EXISTS city_AD_trigger
 AFTER DELETE ON city
 FOR EACH ROW
     INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
