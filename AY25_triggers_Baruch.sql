@@ -107,38 +107,37 @@ Trigger que registra en `city_log` cada row que ha sido actualizado en `city`.
 */
 DROP TRIGGER IF EXISTS city_AU_trigger;
 
+DELIMITER //
+
 CREATE TRIGGER IF NOT EXISTS city_AU_trigger
 AFTER UPDATE ON city
 FOR EACH ROW
-INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
-VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'UPDATE', NOW(), USER());
+BEGIN
+    IF OLD.Population <> NEW.Population THEN
+        INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+        VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'UPDATE', NOW(), USER());
+    END IF;
+END //
+
+DELIMITER ;
+/*
+>   Notemos que la condición IF evita la inserción de registros en `city_log` cuando
+    el UPDATE no hace ningún cambio en la población.
+>   Recordemos que el trigger se ejecuta por cada row en el que hay coincidencia en el UPDATE (Rows matched).
+*/
 
 -- Actualizamos datos en `city`.
 UPDATE city
-SET Population = 20000000
-WHERE Name = 'New City 1' AND CountryCode = 'USA';
-
-UPDATE city
-SET Population = 30000000
-WHERE Name = 'New City 2' AND CountryCode = 'USA';
-
-UPDATE city
-SET Population = 10000
-WHERE Name = 'New City 3' AND CountryCode = 'USA';
-
-/*
-No hacemos uso del operador CASE en el UPDATE ya que este recorre cada uno de los rows en la tabla `city`.
-A pesar de que solo cambiarán de valor las poblaciones que cumplan con las condiciones del CASE,
-el trigger `city_AU_trigger` se ejecutará para cada uno de los rows de la tabla,
-causando inserciones en `city_log` no deseadas (solo nos interesa insertar datos que sí cambiaron de valor en la población).
-
-UPDATE city
 SET Population = CASE
-    WHEN Name = 'New City 1' AND CountryCode = 'USA' THEN 20000000
-    WHEN Name = 'New City 2' AND CountryCode = 'USA' THEN 30000000
-    WHEN Name = 'New City 3' AND CountryCode = 'USA' THEN 10000
+    WHEN Name = 'New City 1' AND CountryCode = 'USA' THEN 20000000  -- 20 millones
+    WHEN Name = 'New City 2' AND CountryCode = 'USA' THEN 30000000  -- 30 millones
+    WHEN Name = 'New City 3' AND CountryCode = 'USA' THEN 10000     -- 10 mil
     ELSE Population -- No olvidar este ELSE para que en el UPDATE no se asigne NULL en la población de los rows que no están considerados en el operador CASE.
 END;
+/*
+>   Al hacer uso del operador CASE en el UPDATE se recorre cada uno de los rows en la tabla `city`.
+>   A pesar de que solo cambiarán de valor las poblaciones que cumplan con las condiciones del CASE,
+    el trigger `city_AU_trigger` se ejecutará para cada uno de los rows de la tabla.
 */
     
 -- Verificamos que efectivamente la población tanto de 'New City 1' como de 'New City 2' no supera los 10 millones de habitantes.
