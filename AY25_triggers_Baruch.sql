@@ -35,7 +35,6 @@ CREATE TABLE IF NOT EXISTS city_log (
     action_day DATE,
     user VARCHAR(50));
 
-
 -- Ejemplo 1 (BEFORE INSERT)
 /*
 Trigger que convierte en mayúsculas el nombre de la ciudad antes de hacer una inserción.
@@ -76,10 +75,10 @@ VALUES
 ('New City 4', 'USA', 'New District', 4000000),
 ('New City 5', 'USA', 'New District', 5000000);
 
--- Veamos que el trigger efectivamente convirtió en mayúsculas el nombre de la ciudad de las nuevas inserciones.
-SELECT * FROM city WHERE Name LIKE 'new city _';
+-- Veamos que el trigger `city_BI_trigger` efectivamente convirtió en mayúsculas el nombre de la ciudad de las nuevas inserciones.
+SELECT * FROM city WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
 
--- Veamos que el trigger efectivamente registró las nuevas inserciones.
+-- Veamos que el trigger `city_AI_trigger` efectivamente registró las nuevas inserciones.
 SELECT * FROM city_log;
 
 -- Ejemplo 3 (BEFORE UPDATE)
@@ -148,9 +147,9 @@ END;
 */
     
 -- Verificamos que efectivamente la población tanto de 'New City 1' como de 'New City 2' no supera los 10 millones de habitantes.
-SELECT * FROM city WHERE Name LIKE 'new city _';
+SELECT * FROM city WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
 
--- Veamos que el trigger efectivamente registró el estado anterior a la actualización de los rows modificados.
+-- Veamos que el trigger `city_AU_trigger` efectivamente registró el estado anterior a la actualización de los rows modificados.
 SELECT * FROM city_log;
 /*
 Para el ejemplo se hicieron modificaciones poblacionales para mostrar en particular la funcionalidad de `city_BU_trigger`,
@@ -158,13 +157,7 @@ pero dada la codificación de `city_AU_trigger`, se pueden realizar modificacion
 estas quedarán registradas (con el estado anterior a la modificación) en `city_log`.
 */
 
--- Ejemplo 5 (BEFORE DELETE)
-/*
-
-*/
-
-
--- Ejemplo 6 (AFTER DELETE)
+-- Ejemplo 5 (AFTER DELETE)
 /*
 Trigger que registra en `city_log` cada row que ha sido eliminado en `city`.
 */
@@ -174,3 +167,18 @@ FOR EACH ROW
     INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
     VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'DELETE', NOW(), USER());
 
+-- Eliminamos resgistros en `city`.
+DELETE FROM city
+WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
+
+-- Verificamos que los rows fueron eliminados.
+SELECT * FROM city WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
+
+-- Veamos que el trigger `city_AD_trigger` registró los rows en `city_log`.
+SELECT * FROM city_log;
+
+-- Ejemplo 6
+/*
+Ejecutamos la siguiente línea para consultar los triggers creados en las tablas de la base de datos en uso.
+*/
+SHOW TRIGGERS\G
