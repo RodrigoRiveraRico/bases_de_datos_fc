@@ -141,9 +141,13 @@ SET Population = CASE
     ELSE Population -- No olvidar este ELSE para que en el UPDATE no se asigne NULL en la población de los rows que no están considerados en el operador CASE.
 END;
 /*
->   Al hacer uso del operador CASE en el UPDATE se recorre cada uno de los rows en la tabla `city`.
+>   Al hacer uso del operador CASE en el UPDATE se recorre CADA UNO de los rows en la tabla `city`.
 >   A pesar de que solo cambiarán de valor las poblaciones de los rows que cumplan con las condiciones del CASE,
-    el trigger `city_AU_trigger` se ejecutará para cada uno de los rows de la tabla.
+    ambos triggers se ejecutarán para cada uno de los rows de la tabla.
+>   Lo anterior implica que si en `city` hay alguna ciudad con una población mayor a 10 millones, debido al
+    trigger `city_BU_trigger` se le establecerá el límite superior de 10 millones a dicha ciudad.
+    Además, debido al trigger `city_AU_trigger`, se registrarán en `city_log` las
+    ciudades afectadas por el UPDATE.
 */
     
 -- Verificamos que efectivamente la población tanto de 'New City 1' como de 'New City 2' no supera los 10 millones de habitantes.
