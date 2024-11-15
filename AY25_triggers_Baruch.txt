@@ -1,0 +1,368 @@
+world > /*
+   /*> =================================
+   /*> Ayudantía 25: Triggers
+   /*> Rodrigo Baruch Rivera Rico
+   /*> 15 noviembre 2024
+   /*> =================================
+   /*> */
+world > 
+world > -- Antes de empezar: cargar la base world y ponerla en uso
+world > -- \. path\to\script\base_world.sql
+world > -- \u world
+world > 
+world > /*
+   /*> Triggers
+   /*> */
+world > 
+world > /*
+   /*> >   Crearemos la tabla `city_log` para registrar las modificaciones que ocurren en los registros de la tabla `city`.
+   /*> >   `city_log` tendrá las mismas columnas que `city`, además de:
+   /*>     *   Llave primaria `log_id` para identificar cada registro.
+   /*>     *   Columna `action` para registrar el tipo de modificación que se hizo: INSERT, UPDATE, DELETE.
+   /*>     *   Columna `action_day` para registrar el día en que se hizo la modificación.
+   /*>     *   Colummna `user` para registrar el nombre del usuario que hizo la modificación.
+   /*> */
+world > DROP TABLE IF EXISTS city_log;
+Query OK, 0 rows affected, 1 warning (0.01 sec)
+
+world > 
+world > CREATE TABLE IF NOT EXISTS city_log (
+    ->     log_id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     city_id INT,
+    ->     city_name VARCHAR(35),
+    ->     country_code CHAR(3),
+    ->     district CHAR(20),
+    ->     population INT,
+    ->     action VARCHAR(10),
+    ->     action_day DATE,
+    ->     user VARCHAR(50));
+Query OK, 0 rows affected (0.01 sec)
+
+world > 
+world > -- Ejemplo 1 (BEFORE INSERT)
+world > /*
+   /*> Trigger que convierte en mayúsculas el nombre de la ciudad antes de hacer una inserción.
+   /*> */
+world > DROP TRIGGER IF EXISTS city_BI_trigger;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE TRIGGER IF NOT EXISTS city_BI_trigger
+    -> BEFORE INSERT ON city
+    -> FOR EACH ROW
+    -> SET NEW.Name = UCASE(NEW.Name);
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Ejemplo 2 (AFTER INSERT)
+world > /*
+   /*> Trigger que registra en `city_log` cada nuevo row agregado en `city`.
+   /*> */
+world > DROP TRIGGER IF EXISTS city_AI_trigger;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE TRIGGER IF NOT EXISTS city_AI_trigger
+    -> AFTER INSERT ON city
+    -> FOR EACH ROW
+    -> INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+    -> VALUES (NEW.ID, NEW.Name, NEW.CountryCode, NEW.District, NEW.Population, 'INSERT', NOW(), USER());
+Query OK, 0 rows affected (0.00 sec)
+
+world > /*
+   /*> >   Notemos que el trigger debe ser AFTER INSERT ya que al usar BEFORE INSERT ocurría que
+   /*>     NEW.ID sea 0 (cero), pues antes del INSERT no se ha asignado un valor en la columna `ID` para la nueva inserción.
+   /*> >   De la documentación de MySQL:
+   /*>     *   In a BEFORE trigger, the NEW value for an AUTO_INCREMENT column is 0, 
+   /*>     *   not the sequence number that is generated automatically when the new row actually is inserted.
+   /*>     *   https://dev.mysql.com/doc/refman/9.0/en/trigger-syntax.html
+   /*> */
+world > 
+world > -- Insertamos nuevos datos en `city`.
+world > INSERT INTO city (Name, CountryCode, District, Population)
+    -> VALUES 
+    -> ('new city 1', 'USA', 'New District', 1000000),
+    -> ('new city 2', 'USA', 'New District', 2000000),
+    -> ('new city 3', 'USA', 'New District', 3000000),
+    -> ('new city 4', 'USA', 'New District', 4000000),
+    -> ('new city 5', 'USA', 'New District', 5000000);
+Query OK, 5 rows affected (0.00 sec)
+Records: 5  Duplicates: 0  Warnings: 0
+
+world > 
+world > -- Veamos que el trigger `city_BI_trigger` efectivamente convirtió en mayúsculas el nombre de la ciudad de las nuevas inserciones.
+world > SELECT * FROM city WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
++------+------------+-------------+--------------+------------+
+| ID   | Name       | CountryCode | District     | Population |
++------+------------+-------------+--------------+------------+
+| 4080 | NEW CITY 1 | USA         | New District |    1000000 |
+| 4081 | NEW CITY 2 | USA         | New District |    2000000 |
+| 4082 | NEW CITY 3 | USA         | New District |    3000000 |
+| 4083 | NEW CITY 4 | USA         | New District |    4000000 |
+| 4084 | NEW CITY 5 | USA         | New District |    5000000 |
++------+------------+-------------+--------------+------------+
+5 rows in set (0.00 sec)
+
+world > 
+world > -- Veamos que el trigger `city_AI_trigger` efectivamente registró las nuevas inserciones.
+world > SELECT * FROM city_log;
++--------+---------+------------+--------------+--------------+------------+--------+------------+----------------+
+| log_id | city_id | city_name  | country_code | district     | population | action | action_day | user           |
++--------+---------+------------+--------------+--------------+------------+--------+------------+----------------+
+|      1 |    4080 | NEW CITY 1 | USA          | New District |    1000000 | INSERT | 2024-11-15 | root@localhost |
+|      2 |    4081 | NEW CITY 2 | USA          | New District |    2000000 | INSERT | 2024-11-15 | root@localhost |
+|      3 |    4082 | NEW CITY 3 | USA          | New District |    3000000 | INSERT | 2024-11-15 | root@localhost |
+|      4 |    4083 | NEW CITY 4 | USA          | New District |    4000000 | INSERT | 2024-11-15 | root@localhost |
+|      5 |    4084 | NEW CITY 5 | USA          | New District |    5000000 | INSERT | 2024-11-15 | root@localhost |
++--------+---------+------------+--------------+--------------+------------+--------+------------+----------------+
+5 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 3 (BEFORE UPDATE)
+world > /*
+   /*> Trigger que evita que en la actualización de la población en la tabla `city` se superen los 10 millones de habitantes.
+   /*> */
+world > DROP TRIGGER IF EXISTS city_BU_trigger;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER //
+world > 
+world > CREATE TRIGGER IF NOT EXISTS city_BU_trigger
+    -> BEFORE UPDATE ON city
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     IF NEW.Population > 10000000 THEN
+    ->         SET NEW.Population = 10000000;
+    ->     END IF;
+    -> END //
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > DELIMITER ;
+world > 
+world > -- Ejemplo 4 (AFTER UPDATE)
+world > /*
+   /*> Trigger que registra en `city_log` cada row en `city` en el que ha habido modificación en alguna columna.
+   /*> Nos interesa registrar el estado anterior del row antes de la modificación.
+   /*> */
+world > DROP TRIGGER IF EXISTS city_AU_trigger;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > DELIMITER //
+world > 
+world > CREATE TRIGGER IF NOT EXISTS city_AU_trigger
+    -> AFTER UPDATE ON city
+    -> FOR EACH ROW
+    -> BEGIN
+    ->     IF 
+    ->         OLD.ID <> NEW.ID OR
+    ->         OLD.Name <> NEW.Name OR
+    ->         OLD.CountryCode <> NEW.CountryCode OR
+    ->         OLD.District <> New.District OR
+    ->         OLD.Population <> NEW.Population 
+    ->     THEN
+    ->         INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+    ->         VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'UPDATE', NOW(), USER());
+    ->     END IF;
+    -> END //
+Query OK, 0 rows affected (0.01 sec)
+
+world > 
+world > DELIMITER ;
+world > /*
+   /*> >   Notemos que la condición IF evita la inserción de registros en `city_log` cuando
+   /*>     el UPDATE no hace ningún cambio en alguna columna de `city`.
+   /*> >   Recordemos que el trigger se ejecuta por cada row en el que hay coincidencia en el UPDATE (Rows matched).
+   /*> */
+world > 
+world > -- Actualizamos datos (de población) en `city`.
+world > UPDATE city
+    -> SET Population = CASE
+    ->     WHEN Name = 'New City 1' AND CountryCode = 'USA' THEN 20000000  -- 20 millones
+    ->     WHEN Name = 'New City 2' AND CountryCode = 'USA' THEN 30000000  -- 30 millones
+    ->     WHEN Name = 'New City 3' AND CountryCode = 'USA' THEN 10000     -- 10 mil
+    ->     ELSE Population -- No olvidar este ELSE para que en el UPDATE no se asigne NULL en la población de los rows que no están considerados en el operador CASE.
+    -> END;
+Query OK, 4 rows affected (0.03 sec)
+Rows matched: 4084  Changed: 4  Warnings: 0
+
+world > /*
+   /*> >   Al hacer uso del operador CASE en el UPDATE se recorre cada uno de los rows en la tabla `city`.
+   /*> >   A pesar de que solo cambiarán de valor las poblaciones de los rows que cumplan con las condiciones del CASE,
+   /*>     el trigger `city_AU_trigger` se ejecutará para cada uno de los rows de la tabla.
+   /*> */
+world >     
+world > -- Verificamos que efectivamente la población tanto de 'New City 1' como de 'New City 2' no supera los 10 millones de habitantes.
+world > SELECT * FROM city WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
++------+------------+-------------+--------------+------------+
+| ID   | Name       | CountryCode | District     | Population |
++------+------------+-------------+--------------+------------+
+| 4080 | NEW CITY 1 | USA         | New District |   10000000 |
+| 4081 | NEW CITY 2 | USA         | New District |   10000000 |
+| 4082 | NEW CITY 3 | USA         | New District |      10000 |
+| 4083 | NEW CITY 4 | USA         | New District |    4000000 |
+| 4084 | NEW CITY 5 | USA         | New District |    5000000 |
++------+------------+-------------+--------------+------------+
+5 rows in set (0.00 sec)
+
+world > 
+world > -- Veamos que el trigger `city_AU_trigger` efectivamente registró el estado anterior a la actualización de los rows modificados.
+world > SELECT * FROM city_log;
++--------+---------+-----------------+--------------+--------------+------------+--------+------------+----------------+
+| log_id | city_id | city_name       | country_code | district     | population | action | action_day | user           |
++--------+---------+-----------------+--------------+--------------+------------+--------+------------+----------------+
+|      1 |    4080 | NEW CITY 1      | USA          | New District |    1000000 | INSERT | 2024-11-15 | root@localhost |
+|      2 |    4081 | NEW CITY 2      | USA          | New District |    2000000 | INSERT | 2024-11-15 | root@localhost |
+|      3 |    4082 | NEW CITY 3      | USA          | New District |    3000000 | INSERT | 2024-11-15 | root@localhost |
+|      4 |    4083 | NEW CITY 4      | USA          | New District |    4000000 | INSERT | 2024-11-15 | root@localhost |
+|      5 |    4084 | NEW CITY 5      | USA          | New District |    5000000 | INSERT | 2024-11-15 | root@localhost |
+|      6 |    1024 | Mumbai (Bombay) | IND          | Maharashtra  |   10500000 | UPDATE | 2024-11-15 | root@localhost |
+|      7 |    4080 | NEW CITY 1      | USA          | New District |    1000000 | UPDATE | 2024-11-15 | root@localhost |
+|      8 |    4081 | NEW CITY 2      | USA          | New District |    2000000 | UPDATE | 2024-11-15 | root@localhost |
+|      9 |    4082 | NEW CITY 3      | USA          | New District |    3000000 | UPDATE | 2024-11-15 | root@localhost |
++--------+---------+-----------------+--------------+--------------+------------+--------+------------+----------------+
+9 rows in set (0.00 sec)
+
+world > /*
+   /*> Para el ejemplo se hicieron modificaciones poblacionales para mostrar en particular la funcionalidad de `city_BU_trigger`,
+   /*> pero dada la codificación de `city_AU_trigger`, se pueden realizar modificaciones a cualquier columna de `city` y
+   /*> estas quedarán registradas (con el estado anterior a la modificación) en `city_log`.
+   /*> */
+world > 
+world > -- Ejemplo 5 (AFTER DELETE)
+world > /*
+   /*> Trigger que registra en `city_log` cada row que ha sido eliminado en `city`.
+   /*> */
+world > DROP TRIGGER IF EXISTS city_AD_trigger;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+world > 
+world > CREATE TRIGGER IF NOT EXISTS city_AD_trigger
+    -> AFTER DELETE ON city
+    -> FOR EACH ROW
+    ->     INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+    ->     VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'DELETE', NOW(), USER());
+Query OK, 0 rows affected (0.00 sec)
+
+world > 
+world > -- Eliminamos resgistros en `city`.
+world > DELETE FROM city
+    -> WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
+Query OK, 5 rows affected (0.00 sec)
+
+world > 
+world > -- Verificamos que los rows fueron eliminados.
+world > SELECT * FROM city WHERE Name LIKE 'new city _' AND CountryCode = 'USA';
+Empty set (0.00 sec)
+
+world > 
+world > -- Veamos que el trigger `city_AD_trigger` registró los rows en `city_log`.
+world > SELECT * FROM city_log;
++--------+---------+-----------------+--------------+--------------+------------+--------+------------+----------------+
+| log_id | city_id | city_name       | country_code | district     | population | action | action_day | user           |
++--------+---------+-----------------+--------------+--------------+------------+--------+------------+----------------+
+|      1 |    4080 | NEW CITY 1      | USA          | New District |    1000000 | INSERT | 2024-11-15 | root@localhost |
+|      2 |    4081 | NEW CITY 2      | USA          | New District |    2000000 | INSERT | 2024-11-15 | root@localhost |
+|      3 |    4082 | NEW CITY 3      | USA          | New District |    3000000 | INSERT | 2024-11-15 | root@localhost |
+|      4 |    4083 | NEW CITY 4      | USA          | New District |    4000000 | INSERT | 2024-11-15 | root@localhost |
+|      5 |    4084 | NEW CITY 5      | USA          | New District |    5000000 | INSERT | 2024-11-15 | root@localhost |
+|      6 |    1024 | Mumbai (Bombay) | IND          | Maharashtra  |   10500000 | UPDATE | 2024-11-15 | root@localhost |
+|      7 |    4080 | NEW CITY 1      | USA          | New District |    1000000 | UPDATE | 2024-11-15 | root@localhost |
+|      8 |    4081 | NEW CITY 2      | USA          | New District |    2000000 | UPDATE | 2024-11-15 | root@localhost |
+|      9 |    4082 | NEW CITY 3      | USA          | New District |    3000000 | UPDATE | 2024-11-15 | root@localhost |
+|     10 |    4080 | NEW CITY 1      | USA          | New District |   10000000 | DELETE | 2024-11-15 | root@localhost |
+|     11 |    4081 | NEW CITY 2      | USA          | New District |   10000000 | DELETE | 2024-11-15 | root@localhost |
+|     12 |    4082 | NEW CITY 3      | USA          | New District |      10000 | DELETE | 2024-11-15 | root@localhost |
+|     13 |    4083 | NEW CITY 4      | USA          | New District |    4000000 | DELETE | 2024-11-15 | root@localhost |
+|     14 |    4084 | NEW CITY 5      | USA          | New District |    5000000 | DELETE | 2024-11-15 | root@localhost |
++--------+---------+-----------------+--------------+--------------+------------+--------+------------+----------------+
+14 rows in set (0.00 sec)
+
+world > 
+world > -- Ejemplo 6
+world > /*
+   /*> Ejecutamos la siguiente línea para consultar los triggers creados en las tablas de la base de datos en uso.
+   /*> */
+world > SHOW TRIGGERS\G
+*************************** 1. row ***************************
+             Trigger: city_BI_trigger
+               Event: INSERT
+               Table: city
+           Statement: SET NEW.Name = UCASE(NEW.Name)
+              Timing: BEFORE
+             Created: 2024-11-15 01:50:36.19
+            sql_mode: ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+             Definer: root@localhost
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_general_ci
+*************************** 2. row ***************************
+             Trigger: city_AI_trigger
+               Event: INSERT
+               Table: city
+           Statement: INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+VALUES (NEW.ID, NEW.Name, NEW.CountryCode, NEW.District, NEW.Population, 'INSERT', NOW(), USER())
+              Timing: AFTER
+             Created: 2024-11-15 01:50:36.20
+            sql_mode: ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+             Definer: root@localhost
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_general_ci
+*************************** 3. row ***************************
+             Trigger: city_BU_trigger
+               Event: UPDATE
+               Table: city
+           Statement: BEGIN
+    IF NEW.Population > 10000000 THEN
+        SET NEW.Population = 10000000;
+    END IF;
+END
+              Timing: BEFORE
+             Created: 2024-11-15 01:50:36.24
+            sql_mode: ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+             Definer: root@localhost
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_general_ci
+*************************** 4. row ***************************
+             Trigger: city_AU_trigger
+               Event: UPDATE
+               Table: city
+           Statement: BEGIN
+    IF 
+        OLD.ID <> NEW.ID OR
+        OLD.Name <> NEW.Name OR
+        OLD.CountryCode <> NEW.CountryCode OR
+        OLD.District <> New.District OR
+        OLD.Population <> NEW.Population 
+    THEN
+        INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+        VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'UPDATE', NOW(), USER());
+    END IF;
+END
+              Timing: AFTER
+             Created: 2024-11-15 01:50:36.25
+            sql_mode: ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+             Definer: root@localhost
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_general_ci
+*************************** 5. row ***************************
+             Trigger: city_AD_trigger
+               Event: DELETE
+               Table: city
+           Statement: INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+    VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'DELETE', NOW(), USER())
+              Timing: AFTER
+             Created: 2024-11-15 01:50:36.32
+            sql_mode: ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+             Definer: root@localhost
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_general_ci
+5 rows in set (0.00 sec)
+
+world > notee
