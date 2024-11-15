@@ -49,7 +49,7 @@ SET NEW.Name = UCASE(NEW.Name);
 
 -- Ejemplo 2 (AFTER INSERT)
 /*
-Trigger que registra en `city_log` cada nueva ciudad agregada en `city`.
+Trigger que registra en `city_log` cada nuevo row agregado en `city`.
 */
 DROP TRIGGER IF EXISTS city_AI_trigger;
 
@@ -103,7 +103,8 @@ DELIMITER ;
 
 -- Ejemplo 4 (AFTER UPDATE)
 /*
-Trigger que registra en `city_log` cada row que ha sido actualizado en `city`.
+Trigger que registra en `city_log` cada row en `city` en el que ha habido modificación en alguna columna.
+Nos interesa registrar el estado anterior del row antes de la modificación.
 */
 DROP TRIGGER IF EXISTS city_AU_trigger;
 
@@ -113,7 +114,13 @@ CREATE TRIGGER IF NOT EXISTS city_AU_trigger
 AFTER UPDATE ON city
 FOR EACH ROW
 BEGIN
-    IF OLD.Population <> NEW.Population THEN
+    IF 
+        OLD.ID <> NEW.ID OR
+        OLD.Name <> NEW.Name OR
+        OLD.CountryCode <> NEW.CountryCode OR
+        OLD.District <> New.District OR
+        OLD.Population <> NEW.Population 
+    THEN
         INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
         VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'UPDATE', NOW(), USER());
     END IF;
@@ -122,11 +129,11 @@ END //
 DELIMITER ;
 /*
 >   Notemos que la condición IF evita la inserción de registros en `city_log` cuando
-    el UPDATE no hace ningún cambio en la población.
+    el UPDATE no hace ningún cambio en alguna columna de `city`.
 >   Recordemos que el trigger se ejecuta por cada row en el que hay coincidencia en el UPDATE (Rows matched).
 */
 
--- Actualizamos datos en `city`.
+-- Actualizamos datos (de población) en `city`.
 UPDATE city
 SET Population = CASE
     WHEN Name = 'New City 1' AND CountryCode = 'USA' THEN 20000000  -- 20 millones
@@ -136,7 +143,7 @@ SET Population = CASE
 END;
 /*
 >   Al hacer uso del operador CASE en el UPDATE se recorre cada uno de los rows en la tabla `city`.
->   A pesar de que solo cambiarán de valor las poblaciones que cumplan con las condiciones del CASE,
+>   A pesar de que solo cambiarán de valor las poblaciones de los rows que cumplan con las condiciones del CASE,
     el trigger `city_AU_trigger` se ejecutará para cada uno de los rows de la tabla.
 */
     
@@ -145,3 +152,25 @@ SELECT * FROM city WHERE Name LIKE 'new city _';
 
 -- Veamos que el trigger efectivamente registró el estado anterior a la actualización de los rows modificados.
 SELECT * FROM city_log;
+/*
+Para el ejemplo se hicieron modificaciones poblacionales para mostrar en particular la funcionalidad de `city_BU_trigger`,
+pero dada la codificación de `city_AU_trigger`, se pueden realizar modificaciones a cualquier columna de `city` y
+estas quedarán registradas (con el estado anterior a la modificación) en `city_log`.
+*/
+
+-- Ejemplo 5 (BEFORE DELETE)
+/*
+
+*/
+
+
+-- Ejemplo 6 (AFTER DELETE)
+/*
+Trigger que registra en `city_log` cada row que ha sido eliminado en `city`.
+*/
+CREATE TRIGGER city_AD_trigger
+AFTER DELETE ON city
+FOR EACH ROW
+    INSERT INTO city_log (city_id, city_name, country_code, district, population, action, action_day, user)
+    VALUES (OLD.ID, OLD.Name, OLD.CountryCode, OLD.District, OLD.Population, 'DELETE', NOW(), USER());
+
