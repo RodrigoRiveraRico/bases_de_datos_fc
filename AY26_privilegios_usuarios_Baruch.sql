@@ -98,24 +98,67 @@ REVOKE SELECT ON world.country FROM 'miguel_bd'@'localhost';
 >   No podemos quitar permisos que no hemos asignado:
     El usuario tiene permiso de SELECT sobre todas las tablas, mas no tiene definido el permiso sobre una única tabla.
 */
+REVOKE ALL ON *.* FROM 'baruch_bd'@'localhost', 'miguel_bd'@'localhost', 'jazz_bd'@'localhost';
+/*
+>   Con el query anterior quitamos todos los permisos a cada usuario.
+>   Quitamos todos los permisos de forma global: en bases de datos, tablas, columnas y rutinas.
+*/
 
 -- Ejemplo 8
 /*
 Veamos la sintaxis básica para crear roles.
+Los roles son un conjunto de permisos que se pueden asignar a varios usuarios.
 */
+CREATE ROLE IF NOT EXISTS 'write_role'@'localhost';
 
-
-
-
--- Ejemplo 
+-- Ejemplo 9
 /*
-Veamos la sintaxis básica para la creación de un rol.
-Los roles son grupos de permisos que se pueden asignar a varios usuarios.
-(Desde root)
+Asignamos permisos al rol.
 */
-CREATE ROLE IF NOT EXISTS 'rol_lector'@'localhost';
+GRANT INSERT ON world.* TO 'write_role'@'localhost';
 
+-- Ejemplo 10
+/*
+Adjuntamos usuarios al rol.
+*/
+GRANT 'write_role'@'localhost' TO 'baruch_bd'@'localhost';
+/*
+>   Adjuntar usuarios al rol no hace que el rol se active automáticamente cuando 
+    el usuario inicie sesión.
+>   Lo anterior se puede verificar ejecutando SELECT CURRENT_ROLE(); en la sesión del usuario y observando que aparece NONE.
+>   Para que el usuario active el rol debe ejecutar lo siguiente:
+    SET ROLE 'write_role'@'localhost';
+>   Verificamos los roles activos:
+    SELECT CURRENT_ROLE();
+>   Revisamos que los permisos del usuario correspondan con los del rol activo:
+    SHOW GRANTS;
+>   Para desactivar los roles activos:
+    SET ROLE NONE;
+*/
+SET DEFAULT ROLE 'write_role'@'localhost' TO 'baruch_bd'@'localhost';
+/*
+>   Con el query anterior indicamos que el rol `write_role`@`localhost` se activará automáticamente
+    para el usuario `barcuh_bd`@`localhost` cuando inicie sesión.
+>   Si el usuario quiere activar (después de haber desactivado algún rol) todos los roles 
+    que por default tiene asignados, ejecuta lo siguiente:
+    SET ROLE DEFAULT;
+*/
 
+-- Ejemplo 11
+/*
+Quitamos roles a usuarios.
+*/
+REVOKE 'write_role'@'localhost' FROM 'baruch_bd'@'localhost';
+
+-- Ejemplo 12
+/*
+Quitamos permisos en roles.
+*/
+REVOKE IF EXISTS INSERT ON world.* FROM 'write_role'@'localhost';
+/*
+>   Podemos hacer uso de REVOKE IF EXISTS para evitar que MySQL devuelva error cuando
+    el permiso a quitar no exista para el usuario indicado.
+*/
 
 
 
