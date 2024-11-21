@@ -1,0 +1,598 @@
+mysql> /*
+   /*> =================================
+   /*> Ayudantía 26: Privilegios y usuarios
+   /*> Rodrigo Baruch Rivera Rico
+   /*> 21 noviembre 2024
+   /*> =================================
+   /*> */
+mysql> 
+mysql> /*
+   /*> GESTIÓN DE USUARIOS
+   /*> >   Esta es una tarea importante para cualquiera que sea responsable de la gestión de una base de datos MySQL, 
+   /*>     ya que le permite controlar qué usuarios tienen acceso a qué partes de su base de datos. 
+   /*> >   Concediendo los privilegios apropiados a cada usuario, puedes asegurarte de que tu base de datos permanece 
+   /*>     segura al mismo tiempo que permites a los usuarios realizar las tareas que necesitan.
+   /*> */
+mysql> 
+mysql> -- Ejemplo 1
+mysql> /*
+   /*> Veamos la sintaxis básica para la creación de un nuevo usuario.
+   /*> */
+mysql> CREATE USER IF NOT EXISTS 'baruch_bd'@'localhost' IDENTIFIED BY '1234';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CREATE USER IF NOT EXISTS 'miguel_bd'@'localhost' IDENTIFIED BY '5678';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> CREATE USER IF NOT EXISTS 'jazz_bd'@'localhost' IDENTIFIED BY 'abcd';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   Indicamos el nombre de usuario:
+   /*>     *   barcuh_bd
+   /*> >   Indicamos el host:
+   /*>     *   localhost
+   /*>     ~   NOTAS: 
+   /*>         1)  El host define desde qué máquina puede conectarse el usuario.
+   /*>         2)  Usar % para permitir acceso desde cualquier host.
+   /*>         3)  Si no se define el host, se establece % por default.
+   /*> >   Indicamos la contraseña:
+   /*>     *   1234
+   /*> */
+mysql> 
+mysql> -- Ejemplo 2
+mysql> /*
+   /*> Conexión desde el cliente.
+   /*> */
+mysql> -- mysql -u baruch_bd -p -h localhost -P 3306
+mysql> /*
+   /*>     -u para ingresar el nombre de usuario.
+   /*>     -p para ingresar la contraseña.
+   /*>     -h (opcional) para ingresar el IP del servidor MySQL. Por defecto se asigna localhost.
+   /*>     -P (opcional) para ingresar el puerto de acceso al servidor. Es opcional si el servidor MySQL usa el puerto por defecto (3306).
+   /*> */
+mysql> 
+mysql> -- Ejemplo 3
+mysql> /*
+   /*> Veamos los permisos que tiene cada usuario.
+   /*> */
+mysql> SHOW GRANTS FOR 'baruch_bd'@'localhost';
++-----------------------------------------------+
+| Grants for baruch_bd@localhost                |
++-----------------------------------------------+
+| GRANT USAGE ON *.* TO `baruch_bd`@`localhost` |
++-----------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SHOW GRANTS FOR 'miguel_bd'@'localhost';
++-----------------------------------------------+
+| Grants for miguel_bd@localhost                |
++-----------------------------------------------+
+| GRANT USAGE ON *.* TO `miguel_bd`@`localhost` |
++-----------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> SHOW GRANTS FOR 'jazz_bd'@'localhost';
++---------------------------------------------+
+| Grants for jazz_bd@localhost                |
++---------------------------------------------+
+| GRANT USAGE ON *.* TO `jazz_bd`@`localhost` |
++---------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql> /*
+   /*> >   Todos los usuarios tienen el permiso USAGE automáticamente al ser creados.
+   /*> >   USAGE no otorga privilegios sobre bases de datos o tablas; solo permite que el usuario exista y se autentique.
+   /*> */
+mysql> 
+mysql> -- Ejemplo 4
+mysql> /*
+   /*> Veamos los permisos que pueden ser otorgados.
+   /*> */
+mysql> SHOW PRIVILEGES \G
+*************************** 1. row ***************************
+Privilege: Alter
+  Context: Tables
+  Comment: To alter the table
+*************************** 2. row ***************************
+Privilege: Alter routine
+  Context: Functions,Procedures
+  Comment: To alter or drop stored functions/procedures
+*************************** 3. row ***************************
+Privilege: Create
+  Context: Databases,Tables,Indexes
+  Comment: To create new databases and tables
+*************************** 4. row ***************************
+Privilege: Create routine
+  Context: Databases
+  Comment: To use CREATE FUNCTION/PROCEDURE
+*************************** 5. row ***************************
+Privilege: Create role
+  Context: Server Admin
+  Comment: To create new roles
+*************************** 6. row ***************************
+Privilege: Create temporary tables
+  Context: Databases
+  Comment: To use CREATE TEMPORARY TABLE
+*************************** 7. row ***************************
+Privilege: Create view
+  Context: Tables
+  Comment: To create new views
+*************************** 8. row ***************************
+Privilege: Create user
+  Context: Server Admin
+  Comment: To create new users
+*************************** 9. row ***************************
+Privilege: Delete
+  Context: Tables
+  Comment: To delete existing rows
+*************************** 10. row ***************************
+Privilege: Drop
+  Context: Databases,Tables
+  Comment: To drop databases, tables, and views
+*************************** 11. row ***************************
+Privilege: Drop role
+  Context: Server Admin
+  Comment: To drop roles
+*************************** 12. row ***************************
+Privilege: Event
+  Context: Server Admin
+  Comment: To create, alter, drop and execute events
+*************************** 13. row ***************************
+Privilege: Execute
+  Context: Functions,Procedures
+  Comment: To execute stored routines
+*************************** 14. row ***************************
+Privilege: File
+  Context: File access on server
+  Comment: To read and write files on the server
+*************************** 15. row ***************************
+Privilege: Grant option
+  Context: Databases,Tables,Functions,Procedures
+  Comment: To give to other users those privileges you possess
+*************************** 16. row ***************************
+Privilege: Index
+  Context: Tables
+  Comment: To create or drop indexes
+*************************** 17. row ***************************
+Privilege: Insert
+  Context: Tables
+  Comment: To insert data into tables
+*************************** 18. row ***************************
+Privilege: Lock tables
+  Context: Databases
+  Comment: To use LOCK TABLES (together with SELECT privilege)
+*************************** 19. row ***************************
+Privilege: Process
+  Context: Server Admin
+  Comment: To view the plain text of currently executing queries
+*************************** 20. row ***************************
+Privilege: Proxy
+  Context: Server Admin
+  Comment: To make proxy user possible
+*************************** 21. row ***************************
+Privilege: References
+  Context: Databases,Tables
+  Comment: To have references on tables
+*************************** 22. row ***************************
+Privilege: Reload
+  Context: Server Admin
+  Comment: To reload or refresh tables, logs and privileges
+*************************** 23. row ***************************
+Privilege: Replication client
+  Context: Server Admin
+  Comment: To ask where the slave or master servers are
+*************************** 24. row ***************************
+Privilege: Replication slave
+  Context: Server Admin
+  Comment: To read binary log events from the master
+*************************** 25. row ***************************
+Privilege: Select
+  Context: Tables
+  Comment: To retrieve rows from table
+*************************** 26. row ***************************
+Privilege: Show databases
+  Context: Server Admin
+  Comment: To see all databases with SHOW DATABASES
+*************************** 27. row ***************************
+Privilege: Show view
+  Context: Tables
+  Comment: To see views with SHOW CREATE VIEW
+*************************** 28. row ***************************
+Privilege: Shutdown
+  Context: Server Admin
+  Comment: To shut down the server
+*************************** 29. row ***************************
+Privilege: Super
+  Context: Server Admin
+  Comment: To use KILL thread, SET GLOBAL, CHANGE MASTER, etc.
+*************************** 30. row ***************************
+Privilege: Trigger
+  Context: Tables
+  Comment: To use triggers
+*************************** 31. row ***************************
+Privilege: Create tablespace
+  Context: Server Admin
+  Comment: To create/alter/drop tablespaces
+*************************** 32. row ***************************
+Privilege: Update
+  Context: Tables
+  Comment: To update existing rows
+*************************** 33. row ***************************
+Privilege: Usage
+  Context: Server Admin
+  Comment: No privileges - allow connect only
+*************************** 34. row ***************************
+Privilege: ENCRYPTION_KEY_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 35. row ***************************
+Privilege: INNODB_REDO_LOG_ARCHIVE
+  Context: Server Admin
+  Comment: 
+*************************** 36. row ***************************
+Privilege: RESOURCE_GROUP_USER
+  Context: Server Admin
+  Comment: 
+*************************** 37. row ***************************
+Privilege: FIREWALL_EXEMPT
+  Context: Server Admin
+  Comment: 
+*************************** 38. row ***************************
+Privilege: SET_USER_ID
+  Context: Server Admin
+  Comment: 
+*************************** 39. row ***************************
+Privilege: SERVICE_CONNECTION_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 40. row ***************************
+Privilege: GROUP_REPLICATION_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 41. row ***************************
+Privilege: AUDIT_ABORT_EXEMPT
+  Context: Server Admin
+  Comment: 
+*************************** 42. row ***************************
+Privilege: GROUP_REPLICATION_STREAM
+  Context: Server Admin
+  Comment: 
+*************************** 43. row ***************************
+Privilege: CLONE_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 44. row ***************************
+Privilege: SYSTEM_USER
+  Context: Server Admin
+  Comment: 
+*************************** 45. row ***************************
+Privilege: AUTHENTICATION_POLICY_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 46. row ***************************
+Privilege: SHOW_ROUTINE
+  Context: Server Admin
+  Comment: 
+*************************** 47. row ***************************
+Privilege: BACKUP_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 48. row ***************************
+Privilege: CONNECTION_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 49. row ***************************
+Privilege: PERSIST_RO_VARIABLES_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 50. row ***************************
+Privilege: RESOURCE_GROUP_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 51. row ***************************
+Privilege: SESSION_VARIABLES_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 52. row ***************************
+Privilege: SYSTEM_VARIABLES_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 53. row ***************************
+Privilege: APPLICATION_PASSWORD_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 54. row ***************************
+Privilege: FLUSH_OPTIMIZER_COSTS
+  Context: Server Admin
+  Comment: 
+*************************** 55. row ***************************
+Privilege: AUDIT_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 56. row ***************************
+Privilege: BINLOG_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 57. row ***************************
+Privilege: BINLOG_ENCRYPTION_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 58. row ***************************
+Privilege: FLUSH_STATUS
+  Context: Server Admin
+  Comment: 
+*************************** 59. row ***************************
+Privilege: FLUSH_TABLES
+  Context: Server Admin
+  Comment: 
+*************************** 60. row ***************************
+Privilege: FLUSH_USER_RESOURCES
+  Context: Server Admin
+  Comment: 
+*************************** 61. row ***************************
+Privilege: REPLICATION_APPLIER
+  Context: Server Admin
+  Comment: 
+*************************** 62. row ***************************
+Privilege: INNODB_REDO_LOG_ENABLE
+  Context: Server Admin
+  Comment: 
+*************************** 63. row ***************************
+Privilege: XA_RECOVER_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 64. row ***************************
+Privilege: PASSWORDLESS_USER_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 65. row ***************************
+Privilege: TABLE_ENCRYPTION_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 66. row ***************************
+Privilege: ROLE_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 67. row ***************************
+Privilege: REPLICATION_SLAVE_ADMIN
+  Context: Server Admin
+  Comment: 
+*************************** 68. row ***************************
+Privilege: SENSITIVE_VARIABLES_OBSERVER
+  Context: Server Admin
+  Comment: 
+68 rows in set (0.00 sec)
+
+mysql> 
+mysql> -- Ejemplo 5
+mysql> /*
+   /*> Veamos la sintaxis básica para otorgar permisos.
+   /*> */
+mysql> GRANT SELECT ON world.country TO 'baruch_bd'@'localhost';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> GRANT SELECT, UPDATE ON world.* TO 'miguel_bd'@'localhost', 'jazz_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   Otorgamos permisos de solo lectura (SELECT) en la tabla `country` de la base de datos `world`
+   /*>     al usuario `barcuh_bd`@`localhost`.
+   /*> >   Otorgamos permisos de lectura y actualización (SELECT y UPDATE) en todas las tablas de la base de datos `world`
+   /*>     a los usuarios `miguel_bd`@`localhost` y `jazz_bd`@`localhost`.
+   /*> */
+mysql> 
+mysql> -- Ejemplo 6
+mysql> /*
+   /*> Revisamos los permisos de cada usuario.
+   /*> */
+mysql> SHOW GRANTS FOR 'baruch_bd'@'localhost';
++--------------------------------------------------------------+
+| Grants for baruch_bd@localhost                               |
++--------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `baruch_bd`@`localhost`                |
+| GRANT SELECT ON `world`.`country` TO `baruch_bd`@`localhost` |
++--------------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+mysql> SHOW GRANTS FOR 'miguel_bd'@'localhost';
++--------------------------------------------------------------+
+| Grants for miguel_bd@localhost                               |
++--------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `miguel_bd`@`localhost`                |
+| GRANT SELECT, UPDATE ON `world`.* TO `miguel_bd`@`localhost` |
++--------------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+mysql> SHOW GRANTS FOR 'jazz_bd'@'localhost';
++------------------------------------------------------------+
+| Grants for jazz_bd@localhost                               |
++------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `jazz_bd`@`localhost`                |
+| GRANT SELECT, UPDATE ON `world`.* TO `jazz_bd`@`localhost` |
++------------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+mysql> 
+mysql> -- Ejemplo 7
+mysql> /*
+   /*> Veamos la sintaxis básica para quitar permisos.
+   /*> */
+mysql> REVOKE UPDATE ON world.* FROM 'miguel_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   Quitamos el permiso de actualización (UPDATE) en todas las tablas de la base de datos `world`
+   /*>     al usuario `miguel_bd`@`localhost`.
+   /*> >   A este usuario le queda el permiso de SELECT sobre todas las tablas; intentemos quitar este permiso a solo una tabla.
+   /*> */
+mysql> REVOKE SELECT ON world.country FROM 'miguel_bd'@'localhost';
+ERROR 1147 (42000): There is no such grant defined for user 'miguel_bd' on host 'localhost' on table 'country'
+mysql> /*
+   /*> >   Obtenemos el siguiente error:
+   /*>     ERROR 1147 (42000): There is no such grant defined for user 'miguel_bd' on host 'localhost' on table 'country'
+   /*> >   No podemos quitar permisos que no hemos asignado:
+   /*>     El usuario tiene permiso de SELECT sobre todas las tablas, mas no tiene definido el permiso sobre una única tabla.
+   /*> */
+mysql> REVOKE ALL ON *.* FROM 'baruch_bd'@'localhost', 'miguel_bd'@'localhost', 'jazz_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   Con el query anterior quitamos todos los permisos a cada usuario.
+   /*> >   Quitamos todos los permisos de forma global: en bases de datos, tablas, columnas y rutinas.
+   /*> */
+mysql> 
+mysql> -- Ejemplo 8
+mysql> /*
+   /*> Veamos la sintaxis básica para crear roles.
+   /*> Los roles son un conjunto de permisos que se pueden asignar a varios usuarios.
+   /*> */
+mysql> CREATE ROLE IF NOT EXISTS 'write_role'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> -- Ejemplo 9
+mysql> /*
+   /*> Asignamos permisos al rol.
+   /*> */
+mysql> GRANT INSERT ON world.* TO 'write_role'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> -- Ejemplo 10
+mysql> /*
+   /*> Revisamos los permisos del rol.
+   /*> */
+mysql> SHOW GRANTS FOR 'write_role'@'localhost';
++-------------------------------------------------------+
+| Grants for write_role@localhost                       |
++-------------------------------------------------------+
+| GRANT USAGE ON *.* TO `write_role`@`localhost`        |
+| GRANT INSERT ON `world`.* TO `write_role`@`localhost` |
++-------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+mysql> 
+mysql> -- Ejemplo 11
+mysql> /*
+   /*> Adjuntamos usuarios al rol.
+   /*> */
+mysql> GRANT 'write_role'@'localhost' TO 'baruch_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   Adjuntar usuarios al rol no hace que el rol se active automáticamente cuando 
+   /*>     el usuario inicie sesión.
+   /*> >   Lo anterior se puede verificar ejecutando SELECT CURRENT_ROLE(); en la sesión del usuario y observando que aparece NONE.
+   /*> >   Para que el usuario active el rol debe ejecutar lo siguiente:
+   /*>     SET ROLE 'write_role'@'localhost';
+   /*> >   Verificamos los roles activos:
+   /*>     SELECT CURRENT_ROLE();
+   /*> >   Revisamos que los permisos del usuario correspondan con los del rol activo:
+   /*>     SHOW GRANTS;
+   /*> >   Para desactivar los roles activos:
+   /*>     SET ROLE NONE;
+   /*> */
+mysql> SET DEFAULT ROLE 'write_role'@'localhost' TO 'baruch_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   Con el query anterior indicamos que el rol `write_role`@`localhost` se activará automáticamente
+   /*>     para el usuario `barcuh_bd`@`localhost` cuando inicie sesión.
+   /*> >   Si el usuario quiere activar (después de haber desactivado algún rol) todos los roles 
+   /*>     que por default tiene asignados, ejecuta lo siguiente:
+   /*>     SET ROLE DEFAULT;
+   /*> */
+mysql> 
+mysql> -- Ejemplo 12
+mysql> /*
+   /*> Quitamos roles a usuarios.
+   /*> */
+mysql> REVOKE 'write_role'@'localhost' FROM 'baruch_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> 
+mysql> -- Ejemplo 13
+mysql> /*
+   /*> Quitamos permisos en roles.
+   /*> */
+mysql> REVOKE IF EXISTS INSERT ON world.* FROM 'write_role'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   Podemos hacer uso de REVOKE IF EXISTS para evitar que MySQL devuelva error cuando
+   /*>     el permiso a quitar no exista para el usuario indicado.
+   /*> */
+mysql> 
+mysql> -- Ejemplo 14
+mysql> /*
+   /*> Consultamos los usuarios y roles existentes.
+   /*> */
+mysql> SELECT USER, HOST FROM mysql.user;
++------------------+-----------+
+| USER             | HOST      |
++------------------+-----------+
+| baruch_bd        | localhost |
+| jazz_bd          | localhost |
+| miguel_bd        | localhost |
+| mysql.infoschema | localhost |
+| mysql.session    | localhost |
+| mysql.sys        | localhost |
+| root             | localhost |
+| write_role       | localhost |
++------------------+-----------+
+8 rows in set (0.00 sec)
+
+mysql> 
+mysql> -- Ejemplo 15
+mysql> /*
+   /*> Le daremos permiso al usuario `jazz_bd`@`localhost`
+   /*> de ejecución de la función cuenta_regresiva que definimos en la ayudantía 23.
+   /*> */
+mysql> GRANT EXECUTE ON FUNCTION world.cuenta_regresiva TO 'jazz_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   En la sesión del usuario se puede hacer la ejecución:
+   /*>     SELECT cuenta_regresiva(100);
+   /*> */
+mysql> 
+mysql> -- Ejemplo 16
+mysql> /*
+   /*> Le daremos permiso al usuario `jazz_bd`@`localhost`
+   /*> de ejecución del procedimiento MaxPopulation que definimos en la ayudantía 24.
+   /*> */
+mysql> GRANT EXECUTE ON PROCEDURE world.MaxPopulation TO 'jazz_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   En la sesión del usuario se puede hacer la ejecución:
+   /*>     CALL MaxPopulation(@max_val);
+   /*>     SELECT @max_val;
+   /*>     Lo interesante es que el usuario puede ejecutar el procedimiento pero no tiene acceso a ninguna tabla de la base:
+   /*>     SHOW TABLES;
+   /*> */
+mysql> 
+mysql> -- Ejemplo 17
+mysql> /*
+   /*> Podemos designar permisos sobre columnas específicas en tablas.
+   /*> */
+mysql> GRANT SELECT (Name, Continent) ON world.country TO 'miguel_bd'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> /*
+   /*> >   En la sesión del usuario se puede observar que solo tiene acceso a dos columnas de la tabla `country`:
+   /*>     DESC country;
+   /*> */
+mysql> 
+mysql> -- Ejemplo 17
+mysql> /*
+   /*> Borramos usuarios y roles.
+   /*> */
+mysql> DROP USER IF EXISTS 'baruch_bd'@'localhost', 'jazz_bd'@'localhost', 'miguel_bd'@'localhost';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> DROP ROLE IF EXISTS 'write_role'@'localhost';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> notee
