@@ -53,6 +53,10 @@ Veamos los permisos que tiene cada usuario.
 SHOW GRANTS FOR 'baruch_bd'@'localhost';
 SHOW GRANTS FOR 'miguel_bd'@'localhost';
 SHOW GRANTS FOR 'jazz_bd'@'localhost';
+/*
+>   Todos los usuarios tienen el permiso USAGE automáticamente al ser creados.
+>   USAGE no otorga privilegios sobre bases de datos o tablas; solo permite que el usuario exista y se autentique.
+*/
 
 -- Ejemplo 4
 /*
@@ -195,6 +199,16 @@ GRANT EXECUTE ON PROCEDURE world.MaxPopulation TO 'jazz_bd'@'localhost';
     SELECT @max_val;
     Lo interesante es que el usuario puede ejecutar el procedimiento pero no tiene acceso a ninguna tabla de la base:
     SHOW TABLES;
+*/
+
+-- Ejemplo 17
+/*
+Podemos designar permisos sobre columnas específicas en tablas.
+*/
+GRANT SELECT (Name, Continent) ON world.country TO 'miguel_bd'@'localhost';
+/*
+>   En la sesión del usuario se puede observar que solo tiene acceso a dos columnas de la tabla `country`:
+    DESC country;
 */
 
 -- Ejemplo 17
