@@ -18,9 +18,9 @@ GESTIÓN DE USUARIOS
 /*
 Veamos la sintaxis básica para la creación de un nuevo usuario.
 */
-CREATE USER IF NOT EXISTS 'baruch_bd'@'localhost' IDENTIFIED BY '1234';
-CREATE USER IF NOT EXISTS 'miguel_bd'@'localhost' IDENTIFIED BY '5678';
-CREATE USER IF NOT EXISTS 'jazz_bd'@'localhost' IDENTIFIED BY 'abcd';
+CREATE USER IF NOT EXISTS baruch_bd@localhost IDENTIFIED BY '1234';
+CREATE USER IF NOT EXISTS miguel_bd@localhost IDENTIFIED BY '5678';
+CREATE USER IF NOT EXISTS jazz_bd@localhost IDENTIFIED BY 'abcd';
 /*
 >   Indicamos el nombre de usuario:
     *   barcuh_bd
@@ -50,9 +50,9 @@ Conexión desde el cliente.
 /*
 Veamos los permisos que tiene cada usuario.
 */
-SHOW GRANTS FOR 'baruch_bd'@'localhost';
-SHOW GRANTS FOR 'miguel_bd'@'localhost';
-SHOW GRANTS FOR 'jazz_bd'@'localhost';
+SHOW GRANTS FOR baruch_bd@localhost;
+SHOW GRANTS FOR miguel_bd@localhost;
+SHOW GRANTS FOR jazz_bd@localhost;
 
 -- Ejemplo 4
 /*
@@ -64,8 +64,8 @@ SHOW PRIVILEGES \G
 /*
 Veamos la sintaxis básica para otorgar permisos.
 */
-GRANT SELECT ON world.country TO 'baruch_bd'@'localhost';
-GRANT SELECT, UPDATE ON world.* TO 'miguel_bd'@'localhost', 'jazz_bd'@'localhost';
+GRANT SELECT ON world.country TO baruch_bd@localhost;
+GRANT SELECT, UPDATE ON world.* TO miguel_bd@localhost, jazz_bd@localhost;
 /*
 >   Otorgamos permisos de solo lectura (SELECT) en la tabla `country` de la base de datos `world`
     al usuario `barcuh_bd`@`localhost`.
@@ -77,28 +77,28 @@ GRANT SELECT, UPDATE ON world.* TO 'miguel_bd'@'localhost', 'jazz_bd'@'localhost
 /*
 Revisamos los permisos de cada usuario.
 */
-SHOW GRANTS FOR 'baruch_bd'@'localhost';
-SHOW GRANTS FOR 'miguel_bd'@'localhost';
-SHOW GRANTS FOR 'jazz_bd'@'localhost';
+SHOW GRANTS FOR baruch_bd@localhost;
+SHOW GRANTS FOR miguel_bd@localhost;
+SHOW GRANTS FOR jazz_bd@localhost;
 
 -- Ejemplo 7
 /*
 Veamos la sintaxis básica para quitar permisos.
 */
-REVOKE UPDATE ON world.* FROM 'miguel_bd'@'localhost';
+REVOKE UPDATE ON world.* FROM miguel_bd@localhost;
 /*
 >   Quitamos el permiso de actualización (UPDATE) en todas las tablas de la base de datos `world`
     al usuario `miguel_bd`@`localhost`.
 >   A este usuario le queda el permiso de SELECT sobre todas las tablas; intentemos quitar este permiso a solo una tabla.
 */
-REVOKE SELECT ON world.country FROM 'miguel_bd'@'localhost';
+REVOKE SELECT ON world.country FROM miguel_bd@localhost;
 /*
 >   Obtenemos el siguiente error:
-    ERROR 1147 (42000): There is no such grant defined for user 'miguel_bd' on host 'localhost' on table 'country'
+    ERROR 1147 (42000): There is no such grant defined for user miguel_bd on host localhost on table 'country'
 >   No podemos quitar permisos que no hemos asignado:
     El usuario tiene permiso de SELECT sobre todas las tablas, mas no tiene definido el permiso sobre una única tabla.
 */
-REVOKE ALL ON *.* FROM 'baruch_bd'@'localhost', 'miguel_bd'@'localhost', 'jazz_bd'@'localhost';
+REVOKE ALL ON *.* FROM baruch_bd@localhost, miguel_bd@localhost, jazz_bd@localhost;
 /*
 >   Con el query anterior quitamos todos los permisos a cada usuario.
 >   Quitamos todos los permisos de forma global: en bases de datos, tablas, columnas y rutinas.
@@ -109,25 +109,31 @@ REVOKE ALL ON *.* FROM 'baruch_bd'@'localhost', 'miguel_bd'@'localhost', 'jazz_b
 Veamos la sintaxis básica para crear roles.
 Los roles son un conjunto de permisos que se pueden asignar a varios usuarios.
 */
-CREATE ROLE IF NOT EXISTS 'write_role'@'localhost';
+CREATE ROLE IF NOT EXISTS write_role@localhost;
 
 -- Ejemplo 9
 /*
 Asignamos permisos al rol.
 */
-GRANT INSERT ON world.* TO 'write_role'@'localhost';
+GRANT INSERT ON world.* TO write_role@localhost;
 
 -- Ejemplo 10
 /*
+Revisamos los permisos del rol.
+*/
+SHOW GRANTS FOR write_role@localhost;
+
+-- Ejemplo 11
+/*
 Adjuntamos usuarios al rol.
 */
-GRANT 'write_role'@'localhost' TO 'baruch_bd'@'localhost';
+GRANT write_role@localhost TO baruch_bd@localhost;
 /*
 >   Adjuntar usuarios al rol no hace que el rol se active automáticamente cuando 
     el usuario inicie sesión.
 >   Lo anterior se puede verificar ejecutando SELECT CURRENT_ROLE(); en la sesión del usuario y observando que aparece NONE.
 >   Para que el usuario active el rol debe ejecutar lo siguiente:
-    SET ROLE 'write_role'@'localhost';
+    SET ROLE write_role@localhost;
 >   Verificamos los roles activos:
     SELECT CURRENT_ROLE();
 >   Revisamos que los permisos del usuario correspondan con los del rol activo:
@@ -135,7 +141,7 @@ GRANT 'write_role'@'localhost' TO 'baruch_bd'@'localhost';
 >   Para desactivar los roles activos:
     SET ROLE NONE;
 */
-SET DEFAULT ROLE 'write_role'@'localhost' TO 'baruch_bd'@'localhost';
+SET DEFAULT ROLE write_role@localhost TO baruch_bd@localhost;
 /*
 >   Con el query anterior indicamos que el rol `write_role`@`localhost` se activará automáticamente
     para el usuario `barcuh_bd`@`localhost` cuando inicie sesión.
@@ -144,22 +150,56 @@ SET DEFAULT ROLE 'write_role'@'localhost' TO 'baruch_bd'@'localhost';
     SET ROLE DEFAULT;
 */
 
--- Ejemplo 11
+-- Ejemplo 12
 /*
 Quitamos roles a usuarios.
 */
-REVOKE 'write_role'@'localhost' FROM 'baruch_bd'@'localhost';
+REVOKE write_role@localhost FROM baruch_bd@localhost;
 
--- Ejemplo 12
+-- Ejemplo 13
 /*
 Quitamos permisos en roles.
 */
-REVOKE IF EXISTS INSERT ON world.* FROM 'write_role'@'localhost';
+REVOKE IF EXISTS INSERT ON world.* FROM write_role@localhost;
 /*
 >   Podemos hacer uso de REVOKE IF EXISTS para evitar que MySQL devuelva error cuando
     el permiso a quitar no exista para el usuario indicado.
 */
 
+-- Ejemplo 14
+/*
+Consultamos los usuarios y roles existentes.
+*/
+SELECT USER, HOST FROM mysql.user;
 
+-- Ejemplo 15
+/*
+Le daremos permiso al usuario `jazz_bd`@`localhost`
+de ejecución de la función cuenta_regresiva que definimos en la ayudantía 23.
+*/
+GRANT EXECUTE ON FUNCTION world.cuenta_regresiva TO jazz_bd@localhost;
+/*
+>   En la sesión del usuario se puede hacer la ejecución:
+    SELECT cuenta_regresiva(100);
+*/
 
--- Ejemplo
+-- Ejemplo 16
+/*
+Le daremos permiso al usuario `jazz_bd`@`localhost`
+de ejecución del procedimiento MaxPopulation que definimos en la ayudantía 24.
+*/
+GRANT EXECUTE ON PROCEDURE world.MaxPopulation TO jazz_bd@localhost;
+/*
+>   En la sesión del usuario se puede hacer la ejecución:
+    CALL MaxPopulation(@max_val);
+    SELECT @max_val;
+    Lo interesante es que el usuario puede ejecutar el procedimiento pero no tiene acceso a ninguna tabla de la base:
+    SHOW TABLES;
+*/
+
+-- Ejemplo 17
+/*
+Borramos usuarios y roles.
+*/
+DROP USER IF EXISTS baruch_bd@localhost, jazz_bd@localhost, miguel_bd@localhost;
+DROP ROLE IF EXISTS write_role@localhost;
